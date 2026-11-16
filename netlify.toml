@@ -1,0 +1,98 @@
+# Netlify Configuration for Soofi Mandi — Catch the Feast
+
+[build]
+  publish = "."
+  functions = "netlify/functions"
+
+# Never serve developer/test material, data files or server source from the static site.
+# (publish = "." would otherwise expose every committed file.) Forced 404s; must stay first.
+[[redirects]]
+  from = "/tests/*"
+  to = "/404"
+  status = 404
+  force = true
+[[redirects]]
+  from = "/scripts/*"
+  to = "/404"
+  status = 404
+  force = true
+[[redirects]]
+  from = "/data/*"
+  to = "/404"
+  status = 404
+  force = true
+[[redirects]]
+  from = "/migrations/*"
+  to = "/404"
+  status = 404
+  force = true
+[[redirects]]
+  from = "/.agent/*"
+  to = "/404"
+  status = 404
+  force = true
+[[redirects]]
+  from = "/netlify/*"
+  to = "/404"
+  status = 404
+  force = true
+[[redirects]]
+  from = "/node_modules/*"
+  to = "/404"
+  status = 404
+  force = true
+[[redirects]]
+  from = "/server.js"
+  to = "/404"
+  status = 404
+  force = true
+[[redirects]]
+  from = "/db.js"
+  to = "/404"
+  status = 404
+  force = true
+[[redirects]]
+  from = "/package.json"
+  to = "/404"
+  status = 404
+  force = true
+[[redirects]]
+  from = "/package-lock.json"
+  to = "/404"
+  status = 404
+  force = true
+[[redirects]]
+  from = "/.env"
+  to = "/404"
+  status = 404
+  force = true
+[[redirects]]
+  from = "/README.md"
+  to = "/404"
+  status = 404
+  force = true
+[[redirects]]
+  from = "/dev-controls-fix-report.md"
+  to = "/404"
+  status = 404
+  force = true
+
+# Route /admin/game-analytics dashboard to the backend function
+[[redirects]]
+  from = "/admin/game-analytics"
+  to = "/.netlify/functions/api/admin/game-analytics"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/admin/game-analytics/*"
+  to = "/.netlify/functions/api/admin/game-analytics/:splat"
+  status = 200
+  force = true
+
+# Route all /api/* requests to the Netlify backend function
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/api/:splat"
+  status = 200
+  force = true

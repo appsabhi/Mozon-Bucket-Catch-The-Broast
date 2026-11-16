@@ -1,0 +1,12 @@
+# Developer/test material and local data never ship to Vercel.
+# (server.js, db.js, game_config.js, offers.js and migrations/ are required by api/index.js and stay.)
+tests/
+scripts/
+data/
+.agent/
+Backend/
+.env
+.env.*
+*.md
+*_verified.png
+offer_reveal_enhanced_*.png

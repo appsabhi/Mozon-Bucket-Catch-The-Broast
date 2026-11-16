@@ -1,0 +1,16 @@
+.env
+package-lock.json
+scripts/recovery/out/
+# Local databases and backups: never commit (production data lives in Neon PostgreSQL)
+data/
+*.db
+*.db-shm
+*.db-wal
+*.db-journal
+*.sqlite
+*.sqlite3
+*.bak
+*_backup_*
+*.dump
+*.sql.gz
+.env.*

@@ -1,0 +1,4272 @@
+:root {
+  --stage-center: #2F405C;
+  --stage-edge: #071429;
+  --stage-floor: #273958;
+
+  --gold-500: #F5B800;
+  --gold-300: #FFD24D;
+  --gold-600: #D99E00;
+
+  --cream-50: #FFF8E7;
+  --sand-200: #F0E3C4;
+  --brown-900: #2A1408;
+  --spice-600: #B5532F;
+  --text-muted: #CFE3D8;
+
+  --chip-bg: rgba(255, 248, 231, 0.10);
+  --chip-line: rgba(245, 184, 0, 0.45);
+
+  --success: #7BD88F;
+  --danger: #FF6B4A;
+
+  --sans: "Poppins", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-family: var(--sans);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
+  background-color: var(--stage-edge);
+  background-image: radial-gradient(circle at 50% 35%, var(--stage-center), var(--stage-edge) 75%);
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+  background-size: cover;
+  color: var(--cream-50);
+  font-family: var(--sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+body.state-intro,
+body.state-playing,
+body.state-results,
+body.state-revealed {
+  background-color: var(--stage-edge);
+  background-image: radial-gradient(circle at 50% 35%, var(--stage-center), var(--stage-edge) 75%);
+}
+
+/* =========================================================================
+   PAGE WRAPPER — Mobile-first clean layout with Safe-Area insets
+   ========================================================================= */
+.page-wrap {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  width: 100%;
+  max-width: 1200px;
+  min-height: 100vh;
+  min-height: 100dvh;
+  margin: 0 auto;
+  padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  box-sizing: border-box;
+}
+
+/* Center content vertically between top logo and bottom footer */
+body.state-intro .page-wrap {
+  justify-content: space-between;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+body.state-revealed .page-wrap,
+body.state-results .page-wrap {
+  justify-content: space-between;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+body.state-playing .page-wrap {
+  height: 100vh;
+  height: 100dvh;
+  max-height: 100dvh;
+  overflow: hidden;
+  justify-content: flex-start;
+  gap: 4px;
+  padding: max(6px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right)) max(6px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
+}
+
+/* =========================================================================
+   BRAND HEADER (During Gameplay)
+   ========================================================================= */
+.brand-header {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 10px;
+  flex-shrink: 0;
+}
+
+body.state-intro .brand-header,
+body.state-revealed .brand-header {
+  display: none !important;
+}
+
+.brand-logo {
+  display: block;
+  width: auto;
+  height: clamp(54px, 7.5vh, 72px);
+  max-width: 190px;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 14px rgba(245, 184, 0, 0.3));
+  user-select: none;
+  -webkit-user-select: none;
+  transition: transform 0.3s cubic-bezier(0.2, 0.7, 0.25, 1);
+}
+
+.brand-logo:hover {
+  transform: scale(1.02);
+}
+
+/* =========================================================================
+   PLAYER NAVIGATION (Signed-in header: player, Home, Log out)
+   Uses the same navy/gold chip language as the intro player chip.
+   ========================================================================= */
+.player-nav {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  flex-shrink: 0;
+  font-family: var(--sans);
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.player-nav-identity {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  padding: 5px 14px;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--chip-line);
+  border-radius: 999px;
+}
+
+.player-nav-label {
+  font-weight: 500;
+  opacity: 0.85;
+}
+
+.player-nav-name {
+  color: var(--gold-300);
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 220px;
+}
+
+.player-nav-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.player-nav-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 32px;
+  padding: 6px 16px;
+  background: var(--chip-bg);
+  border: 1px solid var(--chip-line);
+  border-radius: 999px;
+  color: var(--gold-300);
+  font: 600 12px/1 var(--sans);
+  letter-spacing: 0.04em;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+.player-nav-link:hover {
+  background: rgba(245, 184, 0, 0.16);
+  border-color: var(--gold-500);
+  color: var(--cream-50);
+}
+
+.player-nav-link:focus-visible {
+  outline: 2px solid var(--gold-300);
+  outline-offset: 2px;
+}
+
+.player-nav-link:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* Keep the gameplay screen's play area as large as possible */
+body.state-playing .player-nav {
+  margin-bottom: 0;
+}
+
+body.state-playing .player-nav-identity {
+  padding: 3px 12px;
+}
+
+body.state-playing .player-nav-link {
+  min-height: 28px;
+  padding: 4px 14px;
+}
+
+@media (max-width: 600px) {
+  .player-nav {
+    font-size: 11px;
+    gap: 6px;
+  }
+
+  .player-nav-identity {
+    padding: 4px 10px;
+  }
+
+  .player-nav-name {
+    max-width: 34vw;
+  }
+
+  .player-nav-actions {
+    gap: 6px;
+  }
+
+  .player-nav-link {
+    min-height: 30px;
+    padding: 5px 12px;
+    font-size: 11px;
+  }
+}
+
+@media (max-width: 360px) {
+  .player-nav-label {
+    display: none;
+  }
+}
+
+/* =========================================================================
+   CONTAINERS
+   ========================================================================= */
+.white-container-wrap {
+  position: relative;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+body.state-playing .white-container-wrap {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+  justify-content: flex-start;
+}
+
+body.state-intro .white-container-wrap,
+body.state-revealed .white-container-wrap,
+body.state-results .white-container-wrap {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.white-container {
+  position: relative;
+  width: 100%;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  overflow: visible;
+}
+
+.white-container.is-intro {
+  max-width: 500px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.white-container.is-playing {
+  max-width: 1100px;
+  width: 100%;
+  height: 100%;
+  flex: 1 1 auto;
+  min-height: 0;
+  margin: 0 auto;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.white-container.is-results,
+.white-container.is-revealed {
+  max-width: 460px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+/* =========================================================================
+   VIEWS SWITCHING
+   ========================================================================= */
+.game-view {
+  display: none !important;
+  width: 100%;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.game-view.is-active {
+  display: flex !important;
+  animation: view-fade-in 0.35s cubic-bezier(0.2, 0.8, 0.25, 1) forwards;
+}
+
+@keyframes view-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* =========================================================================
+   STEP 3: START SCREEN (Green & Gold Mobile-First Layout)
+   ========================================================================= */
+.game-view-intro {
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+/* 1. Soofi Mandi Logo (Noticeably larger on mobile, preserved aspect ratio) */
+.intro-logo-wrap {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 0 0 10px;
+}
+
+.intro-logo {
+  display: block;
+  width: auto;
+  height: clamp(76px, 11vh, 100px);
+  max-width: 220px;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 16px rgba(0, 0, 0, 0.45));
+  user-select: none;
+  -webkit-user-select: none;
+  transition: transform 0.3s cubic-bezier(0.2, 0.7, 0.25, 1);
+}
+
+.intro-logo:hover {
+  transform: scale(1.02);
+}
+
+.front-centre {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+/* 2. Eyebrow in gold */
+.intro-eyebrow {
+  margin: 0 0 4px;
+  color: var(--gold-500);
+  font-family: var(--sans);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+/* 3. Primary Heading in cream */
+.intro-heading {
+  margin: 0 0 4px;
+  color: var(--cream-50);
+  font-family: var(--sans);
+  font-size: clamp(26px, 5.5vw, 36px);
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+}
+
+/* 4. Game Title in gold */
+.game-title {
+  margin: 0 0 6px;
+  color: var(--gold-500);
+  font-family: var(--sans);
+  font-size: clamp(20px, 4vw, 28px);
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: 0.04em;
+}
+
+/* 5. Short Description in muted mint */
+.game-subtitle {
+  max-width: 380px;
+  margin: 0 auto 12px;
+  color: var(--text-muted);
+  font-family: var(--sans);
+  font-size: 13.5px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+/* 6. Centered Mandi Bucket with Falling Food Animation & Motion Lines */
+.intro-bucket-wrap {
+  position: relative;
+  width: clamp(140px, 18vh, 175px);
+  height: clamp(120px, 16vh, 150px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 6px auto 14px;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Subtle gold radial glow behind bucket */
+.intro-bucket-glow {
+  position: absolute;
+  width: 140%;
+  height: 140%;
+  top: -20%;
+  left: -20%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(245, 184, 0, 0.25) 0%, rgba(245, 184, 0, 0.08) 50%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Introductory decorative falling plate */
+.intro-falling-food-wrap {
+  position: absolute;
+  top: -32px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 72px;
+  height: 80px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  z-index: 2;
+  pointer-events: none;
+  animation: intro-mandi-fall 2.2s cubic-bezier(0.3, 0, 0.7, 1) infinite;
+}
+
+.intro-motion-lines {
+  width: 32px;
+  height: 24px;
+  margin-bottom: -6px;
+  opacity: 0.85;
+}
+
+.intro-falling-plate {
+  width: 64px;
+  height: 50px;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.5));
+}
+
+@keyframes intro-mandi-fall {
+  0% {
+    transform: translate3d(-50%, -28px, 0) scale(1);
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  60% {
+    transform: translate3d(-50%, 42px, 0) scale(0.92);
+    opacity: 1;
+  }
+  85% {
+    transform: translate3d(-50%, 65px, 0) scale(0.75);
+    opacity: 0;
+  }
+  100% {
+    transform: translate3d(-50%, 75px, 0) scale(0.65);
+    opacity: 0;
+  }
+}
+
+/* Stop decorative animation when game starts */
+body:not(.state-intro) .intro-falling-food-wrap {
+  animation-play-state: paused;
+  display: none;
+}
+
+/* Stationary Bucket Layers (3D Rim Layering: rear behind plate, front in front of plate) */
+.intro-bucket-rear,
+.intro-bucket-front {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.intro-bucket-rear {
+  z-index: 1;
+}
+
+.intro-bucket-rear .intro-bucket-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  filter: drop-shadow(0 8px 24px rgba(0, 0, 0, 0.5));
+}
+
+.intro-bucket-front {
+  z-index: 3;
+  clip-path: polygon(
+    0% 25.5%, 5% 25.8%, 10% 27.2%, 15% 29.2%, 20% 31.8%, 25% 34.5%,
+    30% 36.5%, 35% 37.8%, 40% 38.6%, 45% 38.9%, 50% 39.0%, 55% 38.9%,
+    60% 38.6%, 65% 37.8%, 70% 36.5%, 75% 34.5%, 80% 31.8%, 85% 29.2%,
+    90% 27.2%, 95% 25.8%, 100% 25.5%, 100% 100%, 0% 100%
+  );
+}
+
+.intro-bucket-front .intro-bucket-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+/* 7. Action Buttons (START GAME, Leaderboard) */
+.intro-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+}
+
+.btn-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-family: var(--sans);
+  cursor: pointer;
+  transition: all 0.22s cubic-bezier(0.2, 0.8, 0.25, 1);
+}
+
+.start-game-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 13px 44px;
+  min-height: 48px;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  border: none;
+  border-radius: 999px;
+  background: linear-gradient(135deg, var(--gold-300) 0%, var(--gold-500) 50%, var(--gold-600) 100%);
+  color: var(--brown-900);
+  box-shadow: 0 4px 18px rgba(245, 184, 0, 0.45), 0 0 12px rgba(245, 184, 0, 0.25);
+  cursor: pointer;
+  position: relative;
+  z-index: 10;
+  transition: all 0.22s cubic-bezier(0.2, 0.8, 0.25, 1);
+}
+
+.start-game-btn:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 6px 24px rgba(245, 184, 0, 0.6), 0 0 18px rgba(245, 184, 0, 0.35);
+}
+
+.start-game-btn:active {
+  transform: translateY(1px);
+}
+
+.start-game-btn:focus-visible {
+  outline: 2px solid var(--gold-500);
+  outline-offset: 3px;
+}
+
+/* Secondary button pill (e.g. Leaderboard button) */
+.btn-secondary-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 20px;
+  min-height: 38px;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border-radius: 999px;
+  background: var(--chip-bg);
+  border: 1px solid var(--chip-line);
+  color: var(--gold-300);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  cursor: pointer;
+  position: relative;
+  z-index: 10;
+  transition: all 0.2s ease;
+}
+
+.btn-secondary-pill:hover {
+  background: rgba(255, 248, 231, 0.18);
+  border-color: var(--gold-500);
+  color: var(--gold-500);
+  transform: translateY(-1px);
+}
+
+.btn-secondary-pill .btn-icon {
+  font-size: 13px;
+  line-height: 1;
+}
+
+/* Anonymous Player Identity Chip */
+.intro-player-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 14px;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--chip-line);
+  border-radius: 999px;
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+.player-chip-label {
+  font-weight: 500;
+  opacity: 0.85;
+}
+
+.player-chip-name {
+  color: var(--gold-300);
+  font-weight: 700;
+}
+
+.player-chip-edit-btn {
+  background: transparent;
+  border: none;
+  color: var(--gold-500);
+  cursor: pointer;
+  padding: 0 2px;
+  font-size: 12px;
+  line-height: 1;
+  transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.player-chip-edit-btn:hover {
+  color: var(--gold-300);
+  transform: scale(1.15);
+}
+
+/* Result Screen Leaderboard Button: High contrast navy background, thin gold border, gold text */
+.result-leaderboard-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 8px 22px;
+  min-height: 40px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border-radius: 999px;
+  background: rgba(18, 30, 49, 0.85);
+  border: 1.5px solid var(--gold-500);
+  color: var(--gold-300);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+  cursor: pointer;
+  margin-top: 2px;
+  transition: all 0.22s ease;
+}
+
+.result-leaderboard-btn:hover {
+  background: rgba(30, 48, 77, 0.95);
+  border-color: var(--gold-300);
+  color: #FFF2CC;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45), 0 0 12px rgba(245, 184, 0, 0.25);
+}
+
+/* Hide customer-facing reset demo elements and unused guides */
+.btn-intro-reset,
+.reward-reset-btn,
+.reset-demo-btn,
+.reset-wrap,
+.intro-instruction-wrap,
+.bucket-drag-indicator {
+  display: none !important;
+}
+
+/* 8. Small Footer note */
+.footer-note {
+  display: flex;
+  margin-top: 16px;
+  padding: 4px 0;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  color: var(--gold-500);
+  font-family: var(--sans);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-align: center;
+  user-select: none;
+}
+
+body.state-playing .footer-note {
+  display: none;
+}
+
+body.state-revealed .footer-note,
+body.state-results .footer-note {
+  display: flex !important;
+  margin-top: auto;
+  margin-bottom: 0;
+  flex-shrink: 0;
+  padding: 10px 0 4px;
+}
+
+.footer-item {
+  white-space: nowrap;
+}
+
+.footer-dot,
+.footer-note span {
+  color: var(--gold-500);
+  user-select: none;
+}
+
+/* =========================================================================
+   STEP 4: ACTIVE GAMEPLAY SCREEN (Clean White Layout & Compact HUD)
+   ========================================================================= */
+.game-view-playing {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Compact status bar directly above the playfield */
+.game-hud {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--chip-line);
+  flex-shrink: 0;
+}
+
+.hud-center-title {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.hud-title-eyebrow {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.22em;
+  color: var(--gold-500);
+  text-transform: uppercase;
+  margin-bottom: 1px;
+}
+
+.hud-title-main {
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  color: var(--cream-50);
+  text-transform: uppercase;
+}
+
+/* Score and Misses indicator chips */
+.hud-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 90px;
+  height: 36px;
+  padding: 4px 12px;
+  background: var(--chip-bg);
+  border: 1px solid var(--chip-line);
+  border-radius: 999px;
+  font-family: var(--sans);
+  user-select: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  box-sizing: border-box;
+}
+
+.hud-right-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.hud-pause-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  height: 36px;
+  padding: 4px 12px;
+  background: var(--chip-bg);
+  border: 1px solid var(--chip-line);
+  border-radius: 999px;
+  color: var(--gold-400);
+  font-family: var(--sans);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  transition: transform 0.15s ease, background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  user-select: none;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  box-sizing: border-box;
+}
+
+.hud-pause-btn:hover {
+  background: rgba(245, 184, 0, 0.15);
+  border-color: var(--gold-500);
+  color: var(--gold-300);
+  transform: translateY(-1px);
+}
+
+.hud-pause-btn:active {
+  transform: translateY(1px);
+}
+
+.hud-pause-btn .pause-bars-icon {
+  font-size: 10px;
+  line-height: 1;
+}
+
+.hud-label {
+  color: var(--gold-500);
+  font-size: 10.5px;
+  letter-spacing: 0.14em;
+  font-weight: 700;
+}
+
+.hud-value {
+  font-family: var(--sans);
+  font-size: 14.5px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: var(--cream-50);
+}
+
+.hud-score .hud-value {
+  color: var(--cream-50);
+  display: inline-block;
+  transition: transform 0.15s cubic-bezier(0.18, 0.85, 0.3, 1);
+}
+
+.hud-score .hud-value.pop {
+  animation: score-num-pop 0.3s cubic-bezier(0.18, 0.85, 0.3, 1);
+}
+
+@keyframes score-num-pop {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.35); color: var(--gold-500); }
+  100% { transform: scale(1); }
+}
+
+.hud-misses .hud-value {
+  color: var(--cream-50);
+  display: inline-block;
+}
+
+.hud-misses.is-warning {
+  border-color: var(--danger);
+  background: rgba(255, 107, 74, 0.22);
+  animation: miss-warning-pulse 0.7s ease-in-out infinite alternate;
+}
+
+.hud-misses.is-warning .hud-value {
+  color: var(--danger);
+}
+
+@keyframes miss-warning-pulse {
+  from {
+    box-shadow: 0 0 2px rgba(255, 107, 74, 0.3);
+  }
+  to {
+    box-shadow: 0 0 12px rgba(255, 107, 74, 0.7);
+  }
+}
+
+/* Optional 4-miss warning banner */
+.hud-miss-warning {
+  display: none;
+  align-self: center;
+  padding: 3px 14px;
+  margin-top: 4px;
+  background: rgba(255, 107, 74, 0.2);
+  border: 1px solid var(--danger);
+  border-radius: 999px;
+  color: var(--cream-50);
+  font-size: 11px;
+  font-weight: 700;
+  text-align: center;
+  animation: banner-pop 0.3s ease-out forwards;
+}
+
+.hud-miss-warning.is-visible {
+  display: block;
+}
+
+@keyframes banner-pop {
+  from { opacity: 0; transform: translateY(-4px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Playfield — Stage center to edge gradient with stage floor band */
+.game-play-area {
+  position: relative;
+  width: 100%;
+  flex: 1 1 auto;
+  min-height: 280px;
+  height: 100%;
+  margin-top: 6px;
+  background: linear-gradient(180deg, rgba(27, 48, 94, 0.15) 0%, rgba(10, 25, 42, 0.45) 80%, var(--stage-floor) 100%);
+  border: 1px solid var(--chip-line);
+  border-radius: 20px;
+  box-shadow: inset 0 0 35px rgba(0, 0, 0, 0.4);
+  overflow: hidden;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: grab;
+}
+
+.game-play-area:active {
+  cursor: grabbing;
+}
+
+/* =========================================================================
+   GAME PAUSE OVERLAY & CONTROLS
+   ========================================================================= */
+.game-pause-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(7, 20, 41, 0.88);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  box-sizing: border-box;
+  animation: pause-fade-in 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes pause-fade-in {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+.pause-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  width: 100%;
+  max-width: 320px;
+  padding: 24px 20px 22px;
+  background: linear-gradient(145deg, rgba(37, 55, 84, 0.95) 0%, rgba(26, 40, 64, 0.98) 60%, rgba(15, 25, 41, 1) 100%);
+  border: 1.5px solid var(--gold-500);
+  border-radius: 20px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6), 0 0 24px rgba(245, 184, 0, 0.25);
+  box-sizing: border-box;
+  animation: pause-pop 0.3s cubic-bezier(0.18, 0.85, 0.3, 1) forwards;
+}
+
+@keyframes pause-pop {
+  0% { transform: scale(0.92) translateY(8px); opacity: 0; }
+  100% { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+.pause-kicker-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--gold-400);
+  font-family: var(--sans);
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.pause-kicker-star {
+  font-size: 9px;
+  opacity: 0.85;
+}
+
+.pause-icon-circle {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: rgba(245, 184, 0, 0.12);
+  border: 1.5px solid rgba(245, 184, 0, 0.5);
+  color: var(--gold-300);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  letter-spacing: -2px;
+  margin-bottom: 8px;
+  box-shadow: 0 0 14px rgba(245, 184, 0, 0.25);
+}
+
+.pause-title {
+  margin: 0 0 4px;
+  font-family: var(--sans);
+  font-size: 24px;
+  font-weight: 900;
+  color: var(--cream-50);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.pause-subtitle {
+  margin: 0 0 16px;
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--cream-100);
+  line-height: 1.4;
+  opacity: 0.9;
+}
+
+.pause-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  width: 100%;
+  margin-bottom: 18px;
+}
+
+.pause-stat-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 6px;
+  background: rgba(14, 24, 40, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+}
+
+.pause-stat-label {
+  font-family: var(--sans);
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  color: var(--gold-400);
+  text-transform: uppercase;
+  margin-bottom: 2px;
+}
+
+.pause-stat-value {
+  font-family: var(--sans);
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--cream-50);
+}
+
+.resume-game-btn {
+  width: 100%;
+  max-width: 240px;
+  min-height: 44px;
+  padding: 11px 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 13.5px;
+  letter-spacing: 0.12em;
+  border-radius: 999px;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.resume-game-btn .resume-icon {
+  font-size: 11px;
+}
+
+/* =========================================================================
+   3D LAYERED BUCKET & FALLING DELICACIES
+   ========================================================================= */
+.bucket-layer {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 130px;
+  height: 130px;
+  will-change: left;
+  pointer-events: none;
+  transition: transform 0.08s ease-out;
+}
+
+.bucket-layer.is-moving-left {
+  transform: translateX(-50%) rotate(-4deg);
+}
+
+.bucket-layer.is-moving-right {
+  transform: translateX(-50%) rotate(4deg);
+}
+
+.bucket-rear-layer {
+  z-index: 2;
+  filter: drop-shadow(0 6px 16px rgba(0, 0, 0, 0.45));
+}
+
+.bucket-rear-layer .bucket-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.falling-items-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.bucket-front-layer {
+  z-index: 6;
+  clip-path: polygon(
+    0% 25.5%,
+    5% 25.8%,
+    10% 27.2%,
+    15% 29.2%,
+    20% 31.4%,
+    25% 33.2%,
+    30% 34.7%,
+    35% 35.8%,
+    40% 36.4%,
+    45% 36.6%,
+    50% 36.7%,
+    55% 36.6%,
+    60% 36.4%,
+    65% 35.8%,
+    70% 34.7%,
+    75% 33.2%,
+    80% 31.4%,
+    85% 29.2%,
+    90% 27.2%,
+    95% 25.8%,
+    100% 25.5%,
+    100% 100%,
+    0% 100%
+  );
+  -webkit-clip-path: polygon(
+    0% 25.5%,
+    5% 25.8%,
+    10% 27.2%,
+    15% 29.2%,
+    20% 31.4%,
+    25% 33.2%,
+    30% 34.7%,
+    35% 35.8%,
+    40% 36.4%,
+    45% 36.6%,
+    50% 36.7%,
+    55% 36.6%,
+    60% 36.4%,
+    65% 35.8%,
+    70% 34.7%,
+    75% 33.2%,
+    80% 31.4%,
+    85% 29.2%,
+    90% 27.2%,
+    95% 25.8%,
+    100% 25.5%,
+    100% 100%,
+    0% 100%
+  );
+}
+
+.bucket-front-layer .bucket-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+/* Brief gold ring pulse on bucket on successful catch */
+.bucket-layer.is-caught-pulse,
+.bucket-front-layer.is-caught-pulse {
+  animation: bucket-catch-pulse 0.35s ease-out;
+}
+
+@keyframes bucket-catch-pulse {
+  0% { filter: drop-shadow(0 0 0 rgba(245, 184, 0, 0)); }
+  50% { filter: drop-shadow(0 0 16px var(--gold-500)); }
+  100% { filter: drop-shadow(0 0 0 rgba(245, 184, 0, 0)); }
+}
+
+/* Falling food items with attached horizontal name tag */
+.falling-food-item {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  pointer-events: none;
+  will-change: transform;
+}
+
+.falling-food-item .food-img {
+  width: 82px;
+  height: 64px;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.4));
+  display: block;
+  pointer-events: none;
+}
+
+/* Food name pills: cream-colored with var(--brown-900) text */
+.falling-food-item .food-name-tag {
+  display: inline-block;
+  margin-top: 3px;
+  padding: 2.5px 9px;
+  background: var(--cream-50);
+  border: 1px solid var(--chip-line);
+  border-radius: 12px;
+  color: var(--brown-900);
+  font-family: var(--sans);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  line-height: 1.25;
+  pointer-events: none;
+}
+
+.falling-food-item.is-missed {
+  opacity: 0.35;
+  filter: grayscale(0.6);
+  transition: opacity 0.2s ease;
+}
+
+/* =========================================================================
+   FEATURE 1: GOLDEN MANDI COLLECTIBLE
+   ========================================================================= */
+.falling-food-item.is-golden-mandi .food-img {
+  filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.95)) drop-shadow(0 0 18px rgba(255, 180, 0, 0.65)) brightness(1.22) contrast(1.18) sepia(0.65) saturate(3.5) hue-rotate(5deg);
+  animation: golden-mandi-sparkle 1.8s ease-in-out infinite alternate;
+}
+
+@keyframes golden-mandi-sparkle {
+  0% {
+    filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.8)) drop-shadow(0 0 14px rgba(255, 180, 0, 0.5)) brightness(1.18) saturate(3.2);
+  }
+  100% {
+    filter: drop-shadow(0 0 14px rgba(255, 225, 50, 1)) drop-shadow(0 0 24px rgba(255, 190, 20, 0.85)) brightness(1.3) saturate(3.8);
+  }
+}
+
+.falling-food-item.is-golden-mandi .food-name-tag {
+  background: linear-gradient(135deg, #FFE58F 0%, #F5B800 60%, #D48806 100%) !important;
+  color: #1F1604 !important;
+  border-color: #FFF2B8 !important;
+  font-weight: 800 !important;
+  box-shadow: 0 0 8px rgba(245, 184, 0, 0.7);
+  letter-spacing: 0.04em;
+}
+
+/* =========================================================================
+   FEATURE 4: BOMB HAZARD ITEM
+   ========================================================================= */
+.falling-bomb-item {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 5;
+  will-change: transform;
+}
+
+.falling-bomb-item .bomb-svg-wrap {
+  width: 58px;
+  height: 58px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.8)) drop-shadow(0 0 10px rgba(239, 68, 68, 0.5));
+  animation: bomb-wobble 2.2s ease-in-out infinite alternate;
+}
+
+@keyframes bomb-wobble {
+  0% { transform: rotate(-4deg); }
+  100% { transform: rotate(4deg); }
+}
+
+.bomb-fuse-spark {
+  animation: fuse-spark-flicker 0.22s infinite alternate;
+  transform-origin: 46px 8px;
+}
+
+@keyframes fuse-spark-flicker {
+  0% { opacity: 0.7; r: 3.5px; }
+  100% { opacity: 1; r: 5.5px; }
+}
+
+.falling-bomb-item .bomb-name-tag {
+  display: inline-block;
+  margin-top: 3px;
+  padding: 2px 8px;
+  background: linear-gradient(135deg, #7F1D1D 0%, #DC2626 100%);
+  color: #FFF;
+  border: 1px solid #F87171;
+  border-radius: 999px;
+  font-family: var(--sans);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  box-shadow: 0 0 8px rgba(220, 38, 38, 0.7);
+}
+
+.falling-bomb-item.is-caught {
+  animation: food-caught-pop 0.34s cubic-bezier(0.18, 0.85, 0.3, 1) forwards !important;
+}
+
+/* =========================================================================
+   HUD ENHANCEMENTS STRIP (Combo x2 Only)
+   ========================================================================= */
+.hud-enhancements-strip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 6px;
+  margin-bottom: 4px;
+  z-index: 10;
+  min-height: 28px;
+}
+
+.hud-combo {
+  background: linear-gradient(135deg, rgba(245, 184, 0, 0.22) 0%, rgba(217, 158, 0, 0.32) 100%);
+  border: 1.5px solid var(--gold-400);
+  color: #FFF2CC;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-family: var(--sans);
+  font-size: 11px;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  letter-spacing: 0.05em;
+  box-shadow: 0 2px 8px rgba(245, 184, 0, 0.3);
+  transition: all 0.2s ease;
+}
+
+.hud-combo.is-bumped {
+  animation: combo-bump 0.28s ease-out;
+}
+
+@keyframes combo-bump {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.22); filter: brightness(1.3); }
+  100% { transform: scale(1); }
+}
+
+.hud-combo-value {
+  color: var(--gold-300);
+  font-size: 13px;
+  font-weight: 900;
+}
+
+/* Food entering bucket animation */
+.falling-food-item.is-caught {
+  animation: food-caught-pop 0.34s cubic-bezier(0.18, 0.85, 0.3, 1) forwards !important;
+}
+
+@keyframes food-caught-pop {
+  0% {
+    transform: var(--current-transform) scale(1);
+    opacity: 1;
+  }
+  40% {
+    transform: var(--current-transform) translateY(18px) scale(0.85);
+    opacity: 0.95;
+  }
+  80% {
+    transform: var(--current-transform) translateY(38px) scale(0.55);
+    opacity: 0.75;
+  }
+  100% {
+    transform: var(--current-transform) translateY(54px) scale(0.15);
+    opacity: 0;
+  }
+}
+
+/* =========================================================================
+   FEATURE 3: FLOATING SCORES & NOTIFICATIONS
+   ========================================================================= */
+.catch-popup {
+  position: absolute;
+  color: var(--success);
+  font-family: var(--sans);
+  font-size: 15px;
+  font-weight: 800;
+  pointer-events: none;
+  z-index: 10;
+  text-shadow: 0 0 10px rgba(123, 216, 143, 0.65);
+  animation: catch-float-up 0.55s cubic-bezier(0.15, 0.85, 0.25, 1) forwards;
+}
+
+.catch-popup.is-floating-score {
+  color: var(--gold-300);
+  font-family: var(--sans);
+  font-size: 18px;
+  font-weight: 900;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.7), 0 0 12px rgba(245, 184, 0, 0.75);
+  animation: catch-float-up-enhanced 0.65s cubic-bezier(0.15, 0.85, 0.25, 1) forwards;
+}
+
+.catch-popup.is-golden-bonus {
+  color: #FFF8E7;
+  background: linear-gradient(135deg, #FFD700 0%, #FA8C16 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-family: var(--sans);
+  font-size: 20px;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.8)) drop-shadow(0 0 14px rgba(255, 215, 0, 0.85));
+  animation: catch-float-up-enhanced 0.75s cubic-bezier(0.15, 0.85, 0.25, 1) forwards;
+}
+
+.catch-popup.is-combo-popup {
+  color: #FFF2CC;
+  background: linear-gradient(135deg, rgba(15, 25, 41, 0.95), rgba(30, 48, 77, 0.95));
+  border: 1.5px solid var(--gold-400);
+  border-radius: 999px;
+  padding: 4px 14px;
+  font-family: var(--sans);
+  font-size: 14px;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5), 0 0 12px rgba(245, 184, 0, 0.5);
+  animation: combo-float-banner 0.75s cubic-bezier(0.15, 0.85, 0.25, 1) forwards;
+}
+
+.catch-popup.is-bomb-deduction {
+  color: #FF4D4F;
+  text-shadow: 0 0 12px rgba(255, 77, 79, 0.85), 0 2px 8px rgba(0, 0, 0, 0.9);
+  font-family: var(--sans);
+  font-size: 22px;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  animation: catch-float-up-enhanced 0.75s cubic-bezier(0.15, 0.85, 0.25, 1) forwards;
+}
+
+@keyframes catch-float-up-enhanced {
+  0% {
+    transform: translate(-50%, 0) scale(0.7);
+    opacity: 0;
+  }
+  25% {
+    transform: translate(-50%, -12px) scale(1.15);
+    opacity: 1;
+  }
+  70% {
+    opacity: 0.95;
+  }
+  100% {
+    transform: translate(-50%, -42px) scale(1);
+    opacity: 0;
+  }
+}
+
+@keyframes combo-float-banner {
+  0% {
+    transform: translate(-50%, 0) scale(0.6);
+    opacity: 0;
+  }
+  20% {
+    transform: translate(-50%, -10px) scale(1.12);
+    opacity: 1;
+  }
+  75% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -36px) scale(0.95);
+    opacity: 0;
+  }
+}
+
+/* Reduced motion accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .catch-popup,
+  .catch-popup.is-floating-score,
+  .catch-popup.is-golden-bonus,
+  .catch-popup.is-combo-popup,
+  .catch-popup.is-bomb-deduction {
+    animation-duration: 0.3s !important;
+    transform: translate(-50%, -10px) !important;
+  }
+  .falling-bomb-item .bomb-svg-wrap {
+    animation: none !important;
+  }
+  .hud-combo.is-bumped {
+    animation: none !important;
+  }
+}
+
+@keyframes catch-float-up {
+  0% {
+    transform: translate(-50%, 0) scale(0.6);
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -30px) scale(1.1);
+    opacity: 0;
+  }
+}
+
+/* VIEW 3: Results Interstitial Screen */
+.game-view-results {
+  max-width: 500px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 24px 16px;
+  position: relative;
+}
+
+.results-badge {
+  font-size: 36px;
+  margin-bottom: 6px;
+  color: var(--gold-500);
+}
+
+.results-kicker {
+  color: var(--spice-600);
+  font-family: var(--sans);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  margin: 0 0 4px;
+}
+
+.results-title {
+  color: var(--text-dark);
+  font-family: var(--sans);
+  font-weight: 800;
+  font-size: clamp(22px, 5vw, 30px);
+  margin-bottom: 6px;
+}
+
+.results-subtitle {
+  color: var(--text-muted);
+  font-family: var(--sans);
+  font-size: 13.5px;
+  font-weight: 500;
+  margin: 0;
+}
+
+/* =========================================================================
+   STEP 5 & 6: RESULT / "YOU LOST!" & REWARD SCREEN
+   ========================================================================= */
+.white-container.is-revealed .game-view {
+  display: none !important;
+}
+
+body:not(.state-revealed):not(.state-results) .reward-card {
+  display: none !important;
+}
+
+.reward-card {
+  position: relative;
+  display: flex;
+  width: 100%;
+  max-width: 440px;
+  margin: 0 auto;
+  padding: 0;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(12px) scale(0.98);
+  overflow: visible;
+  pointer-events: none;
+  box-sizing: border-box;
+  transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1), transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.35s;
+}
+
+.white-container.is-revealed .reward-card,
+.white-container.is-results .reward-card {
+  visibility: visible;
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  width: 100%;
+  min-height: 0;
+}
+
+/* Brand Logo at the Top of Result Screen (Matching front section positioning) */
+.reward-logo-wrap {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 0;
+  background: transparent;
+  padding: 0;
+  border-radius: 0;
+  border: none;
+  flex-shrink: 0;
+}
+
+.reward-logo {
+  display: block;
+  width: auto;
+  height: clamp(76px, 11vh, 100px);
+  max-width: 220px;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 16px rgba(0, 0, 0, 0.45));
+  user-select: none;
+  -webkit-user-select: none;
+  transition: transform 0.25s ease;
+}
+
+.reward-logo:hover {
+  transform: scale(1.02);
+}
+
+.reward-content-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  flex: 1 1 auto;
+  min-height: 0;
+  margin: 0 auto;
+}
+
+.reward-result-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  width: 100%;
+  margin-bottom: 8px;
+}
+
+.reward-kicker-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin: 0 0 10px;
+  background: transparent;
+  border: none;
+  padding: 0;
+}
+
+.reward-kicker {
+  font-family: var(--sans);
+  font-size: clamp(26px, 6.5vw, 34px);
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  background: linear-gradient(135deg, #FFF5D6 0%, #FFD24D 45%, #F5B800 80%, #D99E00 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: 0 2px 14px rgba(245, 184, 0, 0.35);
+  margin: 0;
+  line-height: 1.15;
+  animation: heading-breathe-zoom 1.8s ease-in-out infinite;
+}
+
+.kicker-star {
+  color: var(--gold-400);
+  font-size: 14px;
+  line-height: 1;
+  filter: drop-shadow(0 0 6px rgba(245, 184, 0, 0.5));
+}
+
+@keyframes heading-breathe-zoom {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.045);
+  }
+}
+
+/* Card Visibility States: Standard Loss vs Offer Unlocked (Score >= 100) vs Offer Revealed */
+.reward-card.is-loss:not(.is-offer-revealed) .reward-offer-card {
+  display: none !important;
+}
+
+.reward-card.is-loss .reward-locked-wrap {
+  display: flex !important;
+}
+
+.reward-card.is-loss .reward-unlock-banner {
+  display: none !important;
+}
+
+.reward-card.is-offer-unlocked .reward-result-header {
+  display: flex !important;
+  flex-direction: column;
+  align-items: center;
+}
+
+.reward-card.is-offer-unlocked .reward-locked-wrap {
+  display: none !important;
+}
+
+.reward-card.is-offer-unlocked .reward-unlock-banner {
+  display: flex !important;
+}
+
+.reward-card.is-offer-unlocked .reward-offer-card {
+  display: none !important;
+}
+
+/* Server score verification: nothing about the offer is shown until the server confirms the score */
+.score-verify-status {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin: 4px auto 16px;
+  max-width: 340px;
+  text-align: center;
+}
+
+.reward-card.is-score-pending .score-verify-status {
+  display: flex;
+}
+
+.reward-card.is-score-pending .reward-locked-wrap,
+.reward-card.is-score-pending .reward-unlock-banner,
+.reward-card.is-score-pending .reward-offer-card {
+  display: none !important;
+}
+
+.score-verify-spinner {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 3px solid rgba(245, 184, 0, 0.25);
+  border-top-color: var(--gold-500);
+  animation: scoreVerifySpin 0.8s linear infinite;
+}
+
+.score-verify-status.is-failed .score-verify-spinner {
+  display: none;
+}
+
+.score-verify-text {
+  margin: 0;
+  font-family: var(--sans);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.45;
+  color: var(--cream-100);
+}
+
+.score-verify-status.is-failed .score-verify-text {
+  color: #FF8A70;
+  background: rgba(255, 107, 74, 0.12);
+  border: 1px solid rgba(255, 107, 74, 0.4);
+  border-radius: 10px;
+  padding: 9px 12px;
+}
+
+.score-verify-retry[disabled] {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+@keyframes scoreVerifySpin {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .score-verify-spinner { animation-duration: 2.4s; }
+}
+
+.reward-card.is-offer-revealed .reward-result-header,
+.reward-card.is-offer-revealed .reward-locked-wrap,
+.reward-card.is-offer-revealed .reward-unlock-banner,
+.reward-card.is-offer-revealed .offer-locked-btn,
+.reward-card.is-offer-revealed .unlock-offer-btn {
+  display: none !important;
+}
+
+.reward-card.is-offer-revealed .reward-offer-card {
+  display: flex !important;
+  animation: offer-reveal-pop 0.4s cubic-bezier(0.18, 0.85, 0.3, 1) forwards;
+}
+
+@keyframes offer-reveal-pop {
+  0% { transform: scale(0.92); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* Score directly on navy background (no card container) */
+.reward-score-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 4px 12px;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  margin: 0 0 4px;
+  min-width: 0;
+  width: 100%;
+}
+
+.reward-score-label {
+  font-family: var(--sans);
+  font-size: clamp(10px, 2.4vw, 11px);
+  font-weight: 800;
+  letter-spacing: 0.22em;
+  color: var(--gold-400);
+  opacity: 0.95;
+  text-transform: uppercase;
+  margin-bottom: 2px;
+}
+
+.reward-score-val-wrap {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 4px;
+}
+
+.reward-score-number {
+  font-family: var(--sans);
+  color: var(--cream-50);
+  font-size: clamp(48px, 12vw, 68px);
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  text-shadow: 0 4px 22px rgba(0, 0, 0, 0.45), 0 0 24px rgba(245, 184, 0, 0.25);
+}
+
+.reward-score-summary {
+  margin: 8px 0 0;
+  color: var(--cream-100);
+  font-family: var(--sans);
+  font-size: clamp(12.5px, 3.2vw, 14px);
+  font-weight: 600;
+  line-height: 1.45;
+  text-align: center;
+  max-width: 340px;
+}
+
+/* Action Buttons: Play Again & Top 10 Leaderboard */
+.reward-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  margin-top: 14px;
+  margin-bottom: 8px;
+}
+
+.play-again-btn {
+  width: auto;
+  min-width: 168px;
+  min-height: 44px;
+  padding: 10px 24px;
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  border-radius: 999px;
+  background: linear-gradient(135deg, var(--gold-300) 0%, var(--gold-500) 50%, var(--gold-600) 100%);
+  color: var(--brown-900);
+  border: none;
+  box-shadow: 0 4px 16px rgba(245, 184, 0, 0.45), 0 0 10px rgba(245, 184, 0, 0.2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: transform 0.22s cubic-bezier(0.2, 0.8, 0.25, 1), box-shadow 0.22s cubic-bezier(0.2, 0.8, 0.25, 1);
+}
+
+.play-again-btn:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 6px 22px rgba(245, 184, 0, 0.6), 0 0 16px rgba(245, 184, 0, 0.35);
+}
+
+.play-again-btn:active {
+  transform: translateY(1px);
+}
+
+.play-again-icon {
+  flex-shrink: 0;
+  transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.25, 1);
+}
+
+.play-again-btn:hover .play-again-icon {
+  transform: rotate(-180deg);
+}
+
+/* Footer on Result Card (Hidden - bottom footer-note is used) */
+.reward-brand-section {
+  display: none !important;
+}
+
+.reward-brand-text {
+  font-family: var(--sans);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.reward-brand-dot {
+  color: var(--gold-500);
+  font-weight: 900;
+}
+
+/* =========================================================================
+   STEP 6: CELEBRATORY REVEALED FEAST REWARD SCREEN
+   ========================================================================= */
+.reward-offer-card {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+  margin: 0 auto 10px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  box-sizing: border-box;
+}
+
+/* 1. Congratulations Message */
+.offer-congrats-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  margin-bottom: 12px;
+  width: 100%;
+}
+
+.offer-congrats-heading {
+  font-family: var(--sans);
+  font-size: clamp(28px, 7.5vw, 40px);
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--cream-50);
+  background: linear-gradient(180deg, #FFFFFF 0%, #FFF3D6 25%, #FFD24D 65%, #F5B800 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(0 2px 10px rgba(0, 0, 0, 0.45)) drop-shadow(0 0 18px rgba(245, 184, 0, 0.35));
+  margin: 0 0 6px;
+  line-height: 1.15;
+}
+
+.offer-congrats-sub {
+  font-family: var(--sans);
+  font-size: clamp(14px, 3.8vw, 17px);
+  font-weight: 600;
+  color: var(--cream-100);
+  margin: 0;
+  line-height: 1.4;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.5);
+  letter-spacing: 0.01em;
+}
+
+/* 2. Offer / Reward Details (Subtle Premium Card) */
+.offer-details-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  margin: 12px auto 16px;
+  width: 100%;
+  max-width: 380px;
+  padding: 20px 22px;
+  background: linear-gradient(145deg, rgba(37, 55, 84, 0.72) 0%, rgba(24, 38, 60, 0.84) 60%, rgba(14, 23, 38, 0.94) 100%);
+  border: 1.5px solid rgba(245, 184, 0, 0.45);
+  border-radius: 18px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), 0 0 16px rgba(245, 184, 0, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  box-sizing: border-box;
+  backdrop-filter: blur(8px);
+}
+
+/* Completely remove unnecessary 'YOUR FEAST REWARD' badge and associated placeholder gaps */
+.offer-reward-badge {
+  display: none !important;
+  margin: 0;
+  padding: 0;
+  height: 0;
+  border: none;
+}
+
+.reward-offer-title {
+  margin: 0 0 8px;
+  color: #FFF9E6;
+  font-family: var(--sans);
+  font-size: clamp(21px, 5.4vw, 27px);
+  font-weight: 800;
+  line-height: 1.25;
+  letter-spacing: 0.015em;
+  text-align: center;
+  background: linear-gradient(135deg, #FFFFFF 0%, #FFF4D0 40%, #FFD24D 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.4));
+}
+
+.reward-offer-desc {
+  margin: 0;
+  color: var(--cream-100);
+  font-family: var(--sans);
+  font-size: clamp(13.5px, 3.5vw, 15px);
+  font-weight: 500;
+  line-height: 1.5;
+  max-width: 330px;
+  text-align: center;
+  opacity: 0.95;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+}
+
+/* 3. Hidden Claim Code & Removed Unexplained White Pill Box */
+.offer-claim-badge-wrap,
+.reward-offer-meta,
+.offer-status-pill {
+  display: none !important;
+}
+
+/* 4. Redemption Instructions: premium navy & gold instruction card */
+.offer-redeem-section {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  margin: 0 auto 16px;
+  padding: clamp(16px, 4.5vw, 20px) clamp(16px, 4.5vw, 22px) 0;
+  width: 100%;
+  max-width: 380px;
+  background:
+    radial-gradient(120% 70% at 50% 0%, rgba(245, 184, 0, 0.14) 0%, rgba(245, 184, 0, 0) 60%),
+    linear-gradient(160deg, #10213F 0%, #0A1730 55%, #060F22 100%);
+  border: 1.5px solid rgba(245, 184, 0, 0.62);
+  border-radius: 18px;
+  box-shadow:
+    0 10px 28px rgba(0, 0, 0, 0.5),
+    0 0 22px rgba(245, 184, 0, 0.16),
+    inset 0 1px 0 rgba(255, 233, 160, 0.18);
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+/* Thin gold accent along the top edge */
+.offer-redeem-section::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 18%;
+  right: 18%;
+  height: 2px;
+  background: linear-gradient(90deg, rgba(255, 210, 77, 0) 0%, #FFD24D 50%, rgba(255, 210, 77, 0) 100%);
+  pointer-events: none;
+}
+
+.offer-redeem-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: clamp(50px, 13vw, 58px);
+  height: clamp(50px, 13vw, 58px);
+  margin: 0 0 10px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 35%, rgba(255, 210, 77, 0.22) 0%, rgba(10, 23, 48, 0.95) 72%);
+  border: 1.5px solid rgba(255, 210, 77, 0.75);
+  box-shadow: 0 0 0 4px rgba(245, 184, 0, 0.08), 0 0 18px rgba(245, 184, 0, 0.32);
+  flex-shrink: 0;
+}
+
+.offer-redeem-icon svg {
+  width: 52%;
+  height: 52%;
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.45));
+}
+
+.offer-redeem-heading {
+  font-family: var(--sans);
+  font-size: clamp(15px, 4.4vw, 18px);
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  line-height: 1.25;
+  text-transform: uppercase;
+  margin: 0 0 8px;
+  color: var(--gold-300);
+  background: linear-gradient(180deg, #FFF6D8 0%, #FFD24D 55%, #F5B800 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(0 1px 6px rgba(245, 184, 0, 0.3));
+}
+
+.offer-instructions-text {
+  margin: 0;
+  font-family: var(--sans);
+  font-size: clamp(13.5px, 3.6vw, 15px);
+  font-weight: 500;
+  color: var(--cream-50);
+  line-height: 1.55;
+  text-align: center;
+  max-width: 310px;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.4);
+}
+
+/* Full-width gold footer strip */
+.offer-redeem-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  align-self: stretch;
+  margin: clamp(14px, 4vw, 18px) calc(-1 * clamp(16px, 4.5vw, 22px)) 0;
+  padding: 10px 12px;
+  background: linear-gradient(135deg, #FFD24D 0%, #F5B800 55%, #D99E00 100%);
+  color: #0A1730;
+  font-family: var(--sans);
+  font-size: clamp(11px, 3.1vw, 12.5px);
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  line-height: 1.3;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+
+.offer-redeem-footer-star {
+  font-size: 0.9em;
+  opacity: 0.75;
+}
+
+@media (max-width: 360px) {
+  .offer-redeem-footer { letter-spacing: 0.08em; gap: 6px; }
+}
+
+/* =========================================================================
+   FULL-SCREEN CELEBRATION CONFETTI
+   ========================================================================= */
+.fullscreen-confetti-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 99999;
+  overflow: hidden;
+}
+
+.confetti-particle {
+  position: absolute;
+  pointer-events: none;
+  will-change: transform, opacity;
+  animation-fill-mode: forwards;
+}
+
+@keyframes confetti-cascade {
+  0% {
+    transform: translate3d(var(--x-start), -30px, 0) rotateX(0deg) rotateY(0deg) rotateZ(0deg);
+    opacity: 0;
+  }
+  10% { opacity: 1; }
+  85% { opacity: 0.95; }
+  100% {
+    transform: translate3d(var(--x-end), 105vh, 0) rotateX(var(--rot-x)) rotateY(var(--rot-y)) rotateZ(var(--rot-z));
+    opacity: 0;
+  }
+}
+
+@keyframes confetti-cannon-left {
+  0% { transform: translate3d(0, 0, 0) rotate(0deg) scale(0.3); opacity: 0; }
+  12% { opacity: 1; }
+  42% { transform: translate3d(calc(var(--dx) * 0.65), var(--apex-y), 0) rotate(calc(var(--rot) * 0.45)) scale(1); opacity: 1; }
+  75% { opacity: 0.95; }
+  100% { transform: translate3d(var(--dx), var(--fall-y), 0) rotate(var(--rot)) scale(0.85); opacity: 0; }
+}
+
+@keyframes confetti-cannon-right {
+  0% { transform: translate3d(0, 0, 0) rotate(0deg) scale(0.3); opacity: 0; }
+  12% { opacity: 1; }
+  42% { transform: translate3d(calc(var(--dx) * 0.65), var(--apex-y), 0) rotate(calc(var(--rot) * 0.45)) scale(1); opacity: 1; }
+  75% { opacity: 0.95; }
+  100% { transform: translate3d(var(--dx), var(--fall-y), 0) rotate(var(--rot)) scale(0.85); opacity: 0; }
+}
+
+@keyframes confetti-burst-radial {
+  0% { transform: translate3d(var(--cx), var(--cy), 0) scale(0.2); opacity: 0; }
+  15% { opacity: 1; }
+  50% { transform: translate3d(calc(var(--cx) + var(--dx)), calc(var(--cy) + var(--dy) * 0.5), 0) rotate(calc(var(--rot) * 0.5)) scale(1); opacity: 1; }
+  85% { opacity: 0.9; }
+  100% { transform: translate3d(calc(var(--cx) + var(--dx) * 1.3), calc(var(--cy) + var(--dy) + 180px), 0) rotate(var(--rot)) scale(0.8); opacity: 0; }
+}
+
+/* =========================================================================
+   RESPONSIVE DESIGN (Mobile Portrait, Tablet, Landscape, Desktop)
+   ========================================================================= */
+
+/* Tablet Adaptations */
+@media (max-width: 900px) {
+  .page-wrap {
+    padding: max(8px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left));
+  }
+  .bucket-layer {
+    width: 110px;
+    height: 110px;
+  }
+}
+
+/* Mobile Adaptations (Portrait Primary) */
+@media (max-width: 600px) {
+  /* Mobile Intro Screen: Responsive top-to-bottom layout */
+  body.state-intro {
+    overflow-y: auto;
+  }
+
+  body.state-intro .page-wrap {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 100vh;
+    min-height: 100dvh;
+    padding: max(14px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+    box-sizing: border-box;
+  }
+
+  body.state-intro .white-container-wrap {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    width: 100%;
+    min-height: 0;
+  }
+
+  body.state-intro .white-container.is-intro {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    width: 100%;
+    min-height: 0;
+  }
+
+  body.state-intro .game-view-intro {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    min-height: 0;
+  }
+
+  /* 1. Logo at the very top with clean spacing */
+  body.state-intro .intro-logo-wrap {
+    margin: 0;
+    flex-shrink: 0;
+  }
+
+  /* Center the intro content vertically between top logo and bottom footer */
+  body.state-intro .front-centre {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-height: 0;
+    margin: 0;
+  }
+
+  body.state-intro .intro-heading {
+    margin-top: 0;
+  }
+
+  body.state-intro .intro-bucket-wrap {
+    margin: 6px auto 12px;
+  }
+
+  /* Controls below bucket */
+  body.state-intro .intro-actions {
+    margin-top: 10px;
+    margin-bottom: 0;
+    flex-shrink: 0;
+  }
+
+  /* 2. Footer items cleanly at the bottom */
+  body.state-intro .footer-note {
+    margin-top: 10px;
+    margin-bottom: 0;
+    flex-shrink: 0;
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    gap: 4px 8px;
+    font-size: 9.5px;
+    letter-spacing: 0.12em;
+    padding: 4px 0;
+  }
+
+  /* Mobile Gameplay: Top logo, flexible play area, bottom gold footer */
+  body.state-playing .page-wrap {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 100vh;
+    height: 100dvh;
+    max-height: 100dvh;
+    overflow: hidden;
+    padding: max(6px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right)) max(6px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
+    box-sizing: border-box;
+  }
+
+  body.state-playing .brand-header {
+    display: flex !important;
+    justify-content: center;
+    align-items: center;
+    margin: 0 0 2px;
+    flex-shrink: 0;
+  }
+
+  body.state-playing .brand-logo {
+    height: clamp(44px, 6.5vh, 54px);
+    max-width: 160px;
+  }
+
+  body.state-playing .white-container-wrap {
+    flex: 1 1 auto;
+    min-height: 0;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+  }
+
+  body.state-playing .white-container.is-playing {
+    flex: 1 1 auto;
+    min-height: 0;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+
+  body.state-playing .game-view-playing {
+    flex: 1 1 auto;
+    min-height: 0;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+
+  body.state-playing .game-hud {
+    flex-shrink: 0;
+  }
+
+  body.state-playing .game-play-area {
+    flex: 1 1 auto;
+    min-height: 240px;
+    height: 100%;
+    margin-top: 4px;
+  }
+
+  body.state-playing .footer-note {
+    display: flex !important;
+    margin-top: 4px;
+    margin-bottom: 0;
+    flex-shrink: 0;
+    width: 100%;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px 8px;
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    padding: 2px 0;
+    color: var(--gold-500);
+  }
+
+  /* Mobile Results Screen: Top logo inside card, centered card, bottom gold footer */
+  body.state-revealed,
+  body.state-results {
+    overflow-y: auto;
+  }
+
+  body.state-revealed .page-wrap,
+  body.state-results .page-wrap {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 100vh;
+    min-height: 100dvh;
+    padding: max(14px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+    box-sizing: border-box;
+  }
+
+  body.state-revealed .white-container-wrap,
+  body.state-results .white-container-wrap {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    width: 100%;
+    min-height: 0;
+  }
+
+  body.state-revealed .white-container.is-revealed,
+  body.state-results .white-container.is-results {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    width: 100%;
+    min-height: 0;
+  }
+
+  body.state-revealed .reward-card,
+  body.state-results .reward-card {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+  }
+
+  /* 1. Logo at the very top with clean spacing (matching front section) */
+  body.state-revealed .reward-logo-wrap,
+  body.state-results .reward-logo-wrap {
+    margin: 0;
+    flex-shrink: 0;
+  }
+
+  body.state-revealed .reward-logo,
+  body.state-results .reward-logo {
+    height: clamp(74px, 11vh, 92px);
+    max-width: 210px;
+  }
+
+  /* Center the scoreboard content vertically between top logo and bottom footer */
+  body.state-revealed .reward-content-center,
+  body.state-results .reward-content-center {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-height: 0;
+    margin: 0;
+  }
+
+  /* Hide duplicate inner footer text on mobile since footer-note is visible at screen bottom */
+  body.state-revealed .reward-brand-section,
+  body.state-results .reward-brand-section {
+    display: none !important;
+  }
+
+  body.state-revealed .footer-note,
+  body.state-results .footer-note {
+    display: flex !important;
+    margin-top: 10px;
+    margin-bottom: 0;
+    flex-shrink: 0;
+    width: 100%;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px 8px;
+    font-size: 9.5px;
+    letter-spacing: 0.12em;
+    padding: 4px 0;
+    color: var(--gold-500);
+  }
+
+  .page-wrap {
+    padding: max(6px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right)) max(6px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
+  }
+
+  /* Noticeably larger logo on mobile with preserved aspect ratio */
+  .brand-logo {
+    height: clamp(56px, 8vh, 70px);
+    max-width: 180px;
+  }
+
+  .intro-logo {
+    height: clamp(74px, 11vh, 92px);
+    max-width: 210px;
+  }
+
+  .intro-heading {
+    font-size: clamp(23px, 6vw, 29px);
+  }
+
+  .game-title {
+    font-size: 19px;
+  }
+
+  .game-subtitle {
+    font-size: 12.5px;
+    margin-bottom: 10px;
+  }
+
+  .intro-bucket-wrap {
+    width: 140px;
+    height: 125px;
+    margin: 4px auto 12px;
+  }
+
+  .start-game-btn {
+    min-height: 46px;
+    padding: 12px 36px;
+    font-size: 13px;
+  }
+
+  .hud-pill {
+    min-width: 82px;
+    height: 34px;
+    padding: 3px 10px;
+    gap: 4px;
+  }
+
+  .hud-label {
+    font-size: 9.5px;
+  }
+
+  .hud-value {
+    font-size: 13px;
+  }
+
+  .hud-title-eyebrow {
+    font-size: 7.5px;
+  }
+
+  .hud-title-main {
+    font-size: 12px;
+  }
+
+  .game-play-area {
+    margin-top: 4px;
+    border-radius: 16px;
+    min-height: 260px;
+  }
+
+  .bucket-layer {
+    width: 90px;
+    height: 90px;
+    bottom: 6px;
+  }
+
+  .falling-food-item .food-img {
+    width: 60px;
+    height: 48px;
+  }
+
+  .falling-food-item .food-name-tag {
+    font-size: 9.5px;
+    padding: 2px 7px;
+  }
+
+  .reward-card {
+    padding: 0;
+    border-radius: 0;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+  }
+
+  .reward-score-number {
+    font-size: clamp(48px, 12vw, 68px);
+  }
+
+  .play-again-btn {
+    min-height: 44px;
+    padding: 10px 24px;
+    font-size: 13px;
+    min-width: 168px;
+    width: auto;
+  }
+}
+
+/* Very short screens or landscape orientation */
+@media (max-height: 520px) {
+  .page-wrap {
+    padding: 4px 8px;
+  }
+  .intro-logo {
+    height: 50px;
+  }
+  .intro-heading {
+    font-size: 18px;
+    margin-bottom: 1px;
+  }
+  .game-title {
+    font-size: 15px;
+    margin-bottom: 2px;
+  }
+  .game-subtitle {
+    display: none;
+  }
+  .intro-bucket-wrap {
+    width: 90px;
+    height: 75px;
+    margin: 2px auto 8px;
+  }
+  .start-game-btn {
+    min-height: 38px;
+    padding: 8px 24px;
+    font-size: 12px;
+  }
+  .footer-note {
+    display: none;
+  }
+  .brand-logo {
+    height: 42px;
+  }
+  .game-hud {
+    padding-bottom: 3px;
+  }
+  .hud-pill {
+    height: 28px;
+    min-width: 72px;
+    padding: 2px 8px;
+  }
+  .reward-card {
+    padding: 12px 14px;
+  }
+  .reward-logo {
+    height: 42px;
+  }
+  .reward-loss-headline {
+    font-size: 20px;
+    margin-bottom: 4px;
+  }
+  .reward-score-number {
+    font-size: 24px;
+  }
+  .play-again-btn {
+    min-height: 38px;
+    padding: 8px 20px;
+  }
+}
+
+/* Accessibility: Respect Reduced-Motion Preference */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .reward-kicker {
+    animation: none !important;
+    transform: none !important;
+  }
+  .confetti-particle {
+    display: none !important;
+  }
+}
+
+/* =========================================================================
+   LEADERBOARD MODAL DIALOG
+   ========================================================================= */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(15, 25, 41, 0.85);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s cubic-bezier(0.2, 0.8, 0.25, 1);
+}
+
+.modal-backdrop.is-open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.modal-card {
+  position: relative;
+  width: 100%;
+  max-width: 440px;
+  max-height: 90vh;
+  max-height: 90dvh;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(175deg, #253754 0%, #1A2840 55%, #0F1929 100%);
+  border: 1.5px solid var(--gold-500);
+  border-radius: 20px;
+  padding: 20px 18px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.65), 0 0 24px rgba(245, 184, 0, 0.2);
+  transform: scale(0.92) translateY(10px);
+  transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.25, 1);
+  overflow: hidden;
+}
+
+.modal-backdrop.is-open .modal-card {
+  transform: scale(1) translateY(0);
+}
+
+.modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--chip-line);
+}
+
+.modal-title-wrap {
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-badge {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  color: var(--gold-500);
+  text-transform: uppercase;
+  margin-bottom: 2px;
+}
+
+.modal-title {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--cream-50);
+  margin: 0;
+}
+
+.modal-subtitle {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 2px;
+  line-height: 1.3;
+}
+
+.modal-close-btn {
+  background: var(--chip-bg);
+  border: 1px solid var(--chip-line);
+  color: var(--cream-50);
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 14px;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+
+.modal-close-btn:hover {
+  background: rgba(245, 184, 0, 0.2);
+  border-color: var(--gold-500);
+  color: var(--gold-300);
+}
+
+/* Player Bar Strip */
+.modal-player-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 12px;
+  margin: 12px 0;
+  background: rgba(15, 25, 41, 0.65);
+  border: 1px solid rgba(245, 184, 0, 0.25);
+  border-radius: 12px;
+}
+
+.player-bar-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1 1 auto;
+}
+
+.player-bar-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--cream-50);
+  white-space: nowrap;
+}
+
+.player-name-input {
+  background: rgba(15, 25, 41, 0.9);
+  border: 1px solid var(--gold-500);
+  border-radius: 6px;
+  color: var(--gold-300);
+  font-family: var(--sans);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 5px 8px;
+  outline: none;
+  width: 120px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.player-name-input:focus {
+  border-color: var(--gold-300);
+  box-shadow: 0 0 8px rgba(245, 184, 0, 0.4);
+}
+
+.btn-save-name {
+  background: var(--gold-500);
+  color: var(--brown-900);
+  border: none;
+  border-radius: 6px;
+  font-family: var(--sans);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 5px 10px;
+  cursor: pointer;
+  transition: background 0.2s ease, opacity 0.2s ease;
+}
+
+.btn-save-name:hover:not(:disabled) {
+  background: var(--gold-300);
+}
+
+.btn-save-name:disabled,
+.btn-save-name.is-saving {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.player-name-feedback {
+  display: none;
+  width: 100%;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 5px 10px;
+  border-radius: 6px;
+  box-sizing: border-box;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.25s ease;
+  line-height: 1.4;
+  margin-top: 4px;
+}
+
+.player-name-feedback.is-visible {
+  display: flex;
+}
+
+.player-name-feedback.is-success {
+  background: rgba(123, 216, 143, 0.14);
+  border: 1px solid rgba(123, 216, 143, 0.45);
+  color: #7BD88F;
+}
+
+.player-name-feedback.is-error {
+  background: rgba(255, 107, 74, 0.14);
+  border: 1px solid rgba(255, 107, 74, 0.45);
+  color: #FF6B4A;
+}
+
+.player-stats-chip {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.player-stats-chip strong {
+  color: var(--gold-300);
+}
+
+/* Leaderboard Table */
+.leaderboard-table-wrap {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  min-height: 160px;
+  max-height: 320px;
+  margin-bottom: 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(245, 184, 0, 0.2);
+  background: rgba(15, 25, 41, 0.45);
+}
+
+.leaderboard-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  text-align: left;
+}
+
+.leaderboard-table th {
+  position: sticky;
+  top: 0;
+  background: #172438;
+  color: var(--gold-400);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 8px 10px;
+  border-bottom: 1px solid rgba(245, 184, 0, 0.25);
+  z-index: 2;
+}
+
+.leaderboard-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  color: var(--cream-50);
+}
+
+.leaderboard-table tr:last-child td {
+  border-bottom: none;
+}
+
+.leaderboard-table tr.is-current-player {
+  background: rgba(245, 184, 0, 0.15);
+  font-weight: 700;
+}
+
+.leaderboard-table tr.is-current-player td {
+  color: var(--gold-300);
+}
+
+.th-rank, .td-rank { width: 44px; text-align: center; }
+.th-score, .td-score { width: 60px; text-align: right; color: var(--gold-300); font-weight: 700; }
+.th-date, .td-date { width: 70px; text-align: right; font-size: 10.5px; color: var(--text-muted); }
+
+.rank-badge-top1 { color: #FFD700; font-weight: 800; font-size: 13.5px; }
+.rank-badge-top2 { color: #E2E8F0; font-weight: 800; font-size: 13px; }
+.rank-badge-top3 { color: #E8A87C; font-weight: 800; font-size: 13px; }
+
+.leaderboard-loading,
+.leaderboard-empty {
+  text-align: center;
+  padding: 24px 12px;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: center;
+  padding-top: 6px;
+}
+
+.modal-done-btn {
+  padding: 10px 36px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+/* =========================================================================
+   OFFER UNLOCK BANNER (Score >= 100 View on Result Card)
+   ========================================================================= */
+.reward-unlock-banner {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 0;
+  margin-bottom: 14px;
+  width: 100%;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  box-sizing: border-box;
+}
+
+.reward-unlock-banner .unlock-score-badge,
+.reward-unlock-banner .unlock-congrats-text {
+  display: none !important;
+}
+
+@keyframes unlock-banner-pop {
+  0% { transform: scale(0.93) translateY(8px); opacity: 0; }
+  100% { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+.unlock-score-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.unlock-party-icon {
+  font-size: 24px;
+  line-height: 1;
+  filter: drop-shadow(0 2px 6px rgba(245, 184, 0, 0.5));
+  animation: party-bounce 1.2s infinite ease-in-out;
+}
+
+@keyframes party-bounce {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-4px) rotate(-6deg); }
+}
+
+.unlock-headline {
+  margin: 0;
+  font-family: var(--sans);
+  font-size: clamp(20px, 4.8vw, 24px);
+  font-weight: 800;
+  color: var(--gold-300);
+  letter-spacing: 0.02em;
+  line-height: 1.2;
+}
+
+.unlock-congrats-text {
+  margin: 0 0 16px;
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.45;
+  color: var(--cream-50);
+  max-width: 340px;
+}
+
+.unlock-offer-btn {
+  width: 100%;
+  max-width: 280px;
+  min-height: 48px;
+  padding: 13px 24px;
+  font-family: var(--sans);
+  font-size: 13.5px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  border-radius: 999px;
+  background: linear-gradient(135deg, var(--gold-300) 0%, var(--gold-500) 50%, var(--gold-600) 100%);
+  color: var(--brown-900);
+  border: none;
+  box-shadow: 0 4px 18px rgba(245, 184, 0, 0.5), 0 0 12px rgba(255, 210, 77, 0.4);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.25, 1), box-shadow 0.2s cubic-bezier(0.2, 0.8, 0.25, 1);
+}
+
+.unlock-offer-btn:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 6px 24px rgba(245, 184, 0, 0.65), 0 0 18px rgba(255, 210, 77, 0.6);
+}
+
+.unlock-offer-btn:active {
+  transform: translateY(1px);
+}
+
+.unlock-btn-star {
+  font-size: 11px;
+  color: var(--brown-900);
+  opacity: 0.85;
+}
+
+/* Offer Locked Button Container & Inactive Styling */
+.reward-locked-wrap {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  margin-bottom: 14px;
+}
+
+.btn-locked,
+.offer-locked-btn {
+  width: 100%;
+  max-width: 280px;
+  min-height: 48px;
+  padding: 13px 24px;
+  font-family: var(--sans);
+  font-size: 13.5px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  border-radius: 999px;
+  background: rgba(25, 38, 58, 0.7);
+  color: rgba(255, 248, 231, 0.45);
+  border: 1.5px solid rgba(255, 255, 255, 0.12);
+  box-shadow: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: not-allowed !important;
+  pointer-events: none;
+  opacity: 0.65;
+  user-select: none;
+  text-transform: uppercase;
+}
+
+.offer-locked-btn .locked-icon {
+  font-size: 13px;
+  opacity: 0.6;
+}
+
+/* =========================================================================
+   DEVELOPMENT TESTING TOOLBAR (Active on localhost / 127.0.0.1 or ?dev=true)
+   ========================================================================= */
+.dev-test-panel {
+  position: fixed;
+  bottom: 10px;
+  right: 10px;
+  z-index: 999999;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px;
+  background: rgba(15, 25, 41, 0.96);
+  border: 1px solid var(--gold-500);
+  border-radius: 12px;
+  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.75);
+  font-family: var(--sans);
+  font-size: 11px;
+  max-width: 290px;
+}
+
+.dev-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(245, 184, 0, 0.25);
+  padding-bottom: 4px;
+}
+
+.dev-test-label {
+  color: var(--gold-400);
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  font-size: 10px;
+}
+
+.dev-panel-section {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dev-section-title {
+  font-size: 9.5px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 700;
+}
+
+.dev-toggles-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.dev-toggle-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 10px;
+  color: var(--cream-100);
+  background: rgba(255, 255, 255, 0.08);
+  padding: 2px 6px;
+  border-radius: 4px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.dev-toggle-chip input {
+  accent-color: var(--gold-500);
+  cursor: pointer;
+  margin: 0;
+}
+
+.dev-btn-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.dev-btn-sm {
+  padding: 2.5px 7px;
+  font-size: 10px;
+}
+
+.dev-btn-gold {
+  background: rgba(245, 184, 0, 0.28);
+  border-color: var(--gold-400);
+  color: #FFF2CC;
+}
+
+.dev-btn-bomb {
+  background: rgba(220, 38, 38, 0.28);
+  border-color: #EF4444;
+  color: #FCA5A5;
+}
+.dev-btn-bomb:hover {
+  background: #DC2626 !important;
+  color: #FFF !important;
+}
+
+.dev-btn {
+  background: rgba(245, 184, 0, 0.18);
+  border: 1px solid var(--gold-500);
+  color: var(--gold-300);
+  border-radius: 999px;
+  padding: 3px 9px;
+  font-size: 10.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.dev-btn:hover {
+  background: var(--gold-500);
+  color: var(--brown-900);
+}
+
+.dev-btn-121 {
+  background: linear-gradient(135deg, var(--gold-400) 0%, var(--gold-500) 100%);
+  color: var(--brown-900);
+  font-weight: 800;
+}
+
+.dev-btn-close {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 11px;
+  padding: 0 4px;
+  cursor: pointer;
+}
+
+.dev-btn-close:hover {
+  color: var(--cream-50);
+}
+
+/* =========================================================================
+   CUSTOMER DETAILS FORM MODAL (#claim-modal)
+   ========================================================================= */
+.claim-modal-card {
+  max-width: 410px;
+  padding: 22px 20px;
+}
+
+.claim-form {
+  display: flex;
+  flex-direction: column;
+  margin-top: 14px;
+}
+
+.claim-field-group {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 12px;
+  text-align: left;
+}
+
+.claim-label {
+  font-family: var(--sans);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--cream-50);
+  margin-bottom: 5px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.claim-req {
+  color: #FF785A;
+  font-weight: 700;
+}
+
+.claim-opt {
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 400;
+}
+
+.claim-input {
+  background: rgba(15, 25, 41, 0.85);
+  border: 1.5px solid rgba(245, 184, 0, 0.35);
+  border-radius: 10px;
+  color: var(--cream-50);
+  font-family: var(--sans);
+  font-size: 13.5px;
+  font-weight: 500;
+  padding: 10px 14px;
+  min-height: 44px; /* Accessible 44px touch target */
+  outline: none;
+  box-sizing: border-box;
+  width: 100%;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+
+.claim-input::placeholder {
+  color: rgba(207, 227, 216, 0.45);
+}
+
+.claim-input:focus {
+  border-color: var(--gold-500);
+  box-shadow: 0 0 10px rgba(245, 184, 0, 0.4);
+  background: rgba(15, 25, 41, 0.95);
+}
+
+.claim-input.is-invalid {
+  border-color: #FF6B4A;
+  box-shadow: 0 0 8px rgba(255, 107, 74, 0.35);
+}
+
+.claim-field-error {
+  font-size: 11px;
+  color: #FF785A;
+  font-weight: 500;
+  margin-top: 4px;
+  line-height: 1.3;
+  min-height: 15px;
+  display: block;
+}
+
+.claim-privacy-note {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 12px;
+  margin: 4px 0 14px;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(245, 184, 0, 0.15);
+  border-radius: 8px;
+  font-family: var(--sans);
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.35;
+  text-align: left;
+}
+
+.privacy-lock-icon {
+  color: var(--gold-500);
+  flex-shrink: 0;
+}
+
+.claim-alert-error {
+  font-family: var(--sans);
+  font-size: 12px;
+  font-weight: 600;
+  color: #FF6B4A;
+  background: rgba(255, 107, 74, 0.15);
+  border: 1px solid rgba(255, 107, 74, 0.4);
+  border-radius: 8px;
+  padding: 9px 12px;
+  margin-bottom: 12px;
+  text-align: center;
+  line-height: 1.35;
+}
+
+.claim-form-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+  width: 100%;
+}
+
+.claim-submit-btn {
+  width: 100%;
+  min-height: 46px;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  border-radius: 999px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.claim-submit-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.claim-spinner {
+  width: 15px;
+  height: 15px;
+  border: 2px solid rgba(42, 20, 8, 0.25);
+  border-top-color: var(--brown-900);
+  border-radius: 50%;
+  animation: spinner-rotate 0.75s linear infinite;
+  display: inline-block;
+}
+
+@keyframes spinner-rotate {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Mandatory frontend login gate */
+.login-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: grid;
+  place-items: center;
+  overflow-y: auto;
+  padding: 24px 16px;
+  background: radial-gradient(circle at 50% 35%, var(--stage-center), var(--stage-edge) 75%);
+}
+.login-screen[hidden] { display: none; }
+body.auth-pending .login-screen { visibility: hidden; pointer-events: none; }
+.login-card {
+  width: min(100%, 440px);
+  padding: 30px clamp(20px, 6vw, 42px) 34px;
+  border: 1px solid rgba(245, 184, 0, .35);
+  border-radius: 24px;
+  background: rgba(7, 20, 41, .78);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, .35);
+  text-align: center;
+}
+.login-logo { width: 160px; height: 110px; object-fit: contain; margin-bottom: 10px; }
+.login-card h1 { margin: 4px 0 8px; color: var(--cream-50); font-size: clamp(24px, 5vw, 30px); line-height: 1.2; }
+.login-supporting, .otp-description { margin: 0 0 26px; color: var(--text-muted); font-size: 15px; }
+.login-form { text-align: left; }
+.login-form[hidden], .otp-preview-note[hidden] { display: none; }
+.login-form label { display: block; margin: 0 0 8px; color: var(--cream-50); font-size: 13px; font-weight: 600; }
+.login-phone-control { display: flex; align-items: center; gap: 12px; min-height: 54px; padding: 0 15px; border: 1px solid rgba(255, 248, 231, .25); border-radius: 12px; background: rgba(255, 255, 255, .08); }
+.login-phone-control > span { padding-right: 12px; border-right: 1px solid rgba(255, 248, 231, .25); color: var(--gold-300); font-weight: 700; }
+.login-phone-control input { width: 100%; border: 0; outline: 0; background: transparent; color: var(--cream-50); font: inherit; font-size: 16px; }
+.login-phone-control input::placeholder { color: rgba(255, 248, 231, .48); }
+.login-submit { width: 100%; min-height: 52px; margin-top: 14px; }
+.login-submit:disabled { cursor: wait; opacity: .72; }
+.login-error { min-height: 19px; margin: 6px 0 0; color: #ff9d85; font-size: 12px; }
+.otp-description { text-align: center; line-height: 1.6; }
+.otp-description strong { color: var(--cream-50); white-space: nowrap; }
+.otp-inputs { display: flex; justify-content: center; gap: clamp(6px, 2vw, 12px); }
+.otp-inputs input { width: clamp(38px, 12vw, 50px); height: 54px; border: 1px solid rgba(255, 248, 231, .3); border-radius: 11px; outline: 0; background: rgba(255, 255, 255, .08); color: var(--gold-300); text-align: center; font: 700 22px var(--sans); }
+.otp-inputs input:focus, .login-phone-control:focus-within { border-color: var(--gold-300); box-shadow: 0 0 0 3px rgba(245, 184, 0, .16); }
+.otp-resend { margin: 16px 0 6px; color: var(--text-muted); text-align: center; font-size: 12px; }
+.login-text-btn { border: 0; padding: 6px; background: none; color: var(--gold-300); cursor: pointer; font: inherit; font-size: 12px; }
+.otp-resend .login-text-btn { margin-left: 5px; text-decoration: underline; }
+.login-text-btn:disabled { color: rgba(255, 248, 231, .4); cursor: default; }
+.login-form > #edit-mobile-btn { display: block; margin: 6px auto 0; }
+.otp-preview-note { margin: 15px 0 0; color: rgba(207, 227, 216, .7); text-align: center; font-size: 11px; }
+body:not(.is-authenticated) > .page-wrap { visibility: hidden; }
+
+/* =========================================================================
+   ROUND COMPLETED SCREEN (score < 100, .reward-card.is-loss)
+   Compact reference layout: icon, score group, divider, result headline +
+   description, one bottom action container.
+   Layout, spacing, size and weight only; existing colours, text, logo and
+   glyphs are unchanged. Scoped to the loss state so the unlock and offer
+   reveal screens keep their current design.
+   ========================================================================= */
+.reward-score-detail,
+.reward-divider {
+  display: none;
+}
+
+.white-container .reward-card.is-loss {
+  justify-content: flex-start;
+  padding-top: 44px;
+}
+
+.white-container .reward-card.is-loss .reward-kicker-badge {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  height: 32px;
+  margin: 0;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.white-container .reward-card.is-loss .reward-kicker {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  line-height: 1;
+}
+
+.white-container .reward-card.is-loss .kicker-star {
+  font-size: 9px;
+}
+
+/* 2. Score group, vertically balanced in the space below the top bar */
+.white-container .reward-card.is-loss .reward-logo-wrap {
+  margin-top: auto;
+  margin-bottom: 20px;
+}
+
+.white-container .reward-card.is-loss .reward-logo {
+  height: clamp(56px, 8vh, 68px);
+}
+
+.white-container .reward-card.is-loss .reward-content-center {
+  flex: 0 0 auto;
+  justify-content: flex-start;
+  margin-bottom: auto;
+}
+
+/* Let the score children and the result block be ordered as one column */
+.white-container .reward-card.is-loss .reward-result-header,
+.white-container .reward-card.is-loss .reward-score-card {
+  display: contents;
+}
+
+.white-container .reward-card.is-loss .reward-score-label {
+  order: 1;
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  margin: 0 0 4px;
+}
+
+.white-container .reward-card.is-loss .reward-score-val-wrap {
+  order: 2;
+}
+
+.white-container .reward-card.is-loss .reward-score-number {
+  font-size: 48px;
+  font-weight: 700;
+  line-height: 1.05;
+}
+
+.white-container .reward-card.is-loss .reward-score-detail {
+  order: 3;
+  display: block;
+  margin: 6px 0 0;
+  color: var(--text-muted);
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+/* 3. Decorative divider using the existing ✦ motif */
+.white-container .reward-card.is-loss .reward-divider {
+  order: 4;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: min(220px, 70%);
+  margin: 22px 0 20px;
+  color: var(--gold-500);
+  font-size: 10px;
+  line-height: 1;
+}
+
+.white-container .reward-card.is-loss .reward-divider::before,
+.white-container .reward-card.is-loss .reward-divider::after {
+  content: "";
+  flex: 1 1 auto;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--chip-line));
+}
+
+.white-container .reward-card.is-loss .reward-divider::after {
+  background: linear-gradient(90deg, var(--chip-line), transparent);
+}
+
+/* 4. Result headline (existing OFFER LOCKED state) and description */
+.white-container .reward-card.is-loss .reward-locked-wrap {
+  order: 5;
+  margin: 0;
+}
+
+.white-container .reward-card.is-loss .offer-locked-btn {
+  width: auto;
+  max-width: none;
+  min-height: 0;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  line-height: 1.3;
+  opacity: 1;
+  gap: 6px;
+}
+
+.white-container .reward-card.is-loss .offer-locked-btn .locked-icon {
+  font-size: 15px;
+}
+
+.white-container .reward-card.is-loss .reward-score-summary {
+  order: 6;
+  margin: 6px 0 0;
+  max-width: 280px;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.45;
+}
+
+/* 5. Bottom action container: secondary info on the left, Play Again on the right */
+.white-container .reward-card.is-loss .reward-actions {
+  order: 7;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  width: min(100%, 340px);
+  margin: 28px 0 0;
+  padding: 6px 6px 6px 16px;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--chip-line);
+  border-radius: 14px;
+  box-sizing: border-box;
+}
+
+.white-container .reward-card.is-loss .result-leaderboard-btn {
+  order: 1;
+  min-height: 44px; /* invisible tap area; keeps the 44px touch-target rule */
+  margin: 0;
+  padding: 4px 0;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  gap: 5px;
+  white-space: nowrap;
+}
+
+.white-container .reward-card.is-loss .result-leaderboard-btn:hover {
+  background: transparent;
+  box-shadow: none;
+  transform: none;
+}
+
+.white-container .reward-card.is-loss .result-leaderboard-btn .btn-icon {
+  font-size: 12px;
+}
+
+.white-container .reward-card.is-loss .play-again-btn {
+  order: 2;
+  min-width: 0;
+  min-height: 44px; /* existing 44px touch-target requirement */
+  padding: 6px 16px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  gap: 6px;
+  white-space: nowrap;
+  box-shadow: 0 2px 10px rgba(245, 184, 0, 0.3);
+}
+
+.white-container .reward-card.is-loss .play-again-btn .play-again-icon {
+  width: 12px;
+  height: 12px;
+}
+
+/* Desktop: a little more breathing room while keeping the same hierarchy */
+@media (min-width: 768px) {
+  .white-container .reward-card.is-loss .reward-logo {
+    height: 72px;
+  }
+}
+
+/* Very short screens (landscape phones) */
+@media (max-height: 520px) {
+  .white-container .reward-card.is-loss {
+    padding-top: 36px;
+  }
+
+  .white-container .reward-card.is-loss .reward-logo {
+    height: 40px;
+  }
+
+  .white-container .reward-card.is-loss .reward-divider {
+    margin: 10px 0 8px;
+  }
+
+  .white-container .reward-card.is-loss .reward-actions {
+    margin-top: 12px;
+  }
+}
+
+@media (max-width: 600px) {
+  .white-container .reward-card.is-loss {
+    flex: 0 0 auto;
+    min-height: 0;
+    padding: 48px 0 16px;
+    justify-content: flex-start;
+  }
+
+  .white-container .reward-card.is-loss .reward-logo-wrap {
+    height: auto;
+    margin: 0 0 14px;
+    transform: none;
+  }
+
+  .white-container .reward-card.is-loss .reward-logo {
+    height: clamp(78px, 9.5vh, 82px);
+    max-width: 210px;
+  }
+
+  .white-container .reward-card.is-loss .reward-kicker-badge {
+    position: static;
+    left: auto;
+    height: auto;
+    margin: 0 0 18px;
+    gap: 8px;
+    transform: none;
+  }
+
+  .white-container .reward-card.is-loss .reward-kicker {
+    font-size: clamp(25px, 7vw, 28px);
+    font-weight: 800;
+    line-height: 1.15;
+  }
+
+  .white-container .reward-card.is-loss .kicker-star {
+    font-size: 12px;
+  }
+
+  .white-container .reward-card.is-loss .reward-content-center {
+    flex: 0 0 auto;
+    justify-content: flex-start;
+    margin: 0;
+  }
+
+  .white-container .reward-card.is-loss .reward-divider {
+    margin: 18px 0 16px;
+  }
+
+  .white-container .reward-card.is-loss .reward-actions {
+    margin-top: 24px;
+  }
+}
+
+@media (max-width: 600px) and (max-height: 520px) {
+  .white-container .reward-card.is-loss {
+    padding-top: 40px;
+    padding-bottom: 8px;
+  }
+
+  .white-container .reward-card.is-loss .reward-logo-wrap {
+    margin-bottom: 8px;
+  }
+
+  .white-container .reward-card.is-loss .reward-logo {
+    height: 58px;
+  }
+
+  .white-container .reward-card.is-loss .reward-kicker-badge {
+    margin-bottom: 10px;
+  }
+
+  .white-container .reward-card.is-loss .reward-divider {
+    margin: 10px 0 8px;
+  }
+
+  .white-container .reward-card.is-loss .reward-actions {
+    margin-top: 12px;
+  }
+}
+
+@media (min-width: 601px) and (min-height: 521px) {
+  .white-container .reward-card.is-loss {
+    padding-top: 78px;
+  }
+
+  .white-container .reward-card.is-loss .reward-logo-wrap {
+    position: relative;
+    top: 3px;
+    margin-bottom: 34px;
+  }
+
+  .white-container .reward-card.is-loss .reward-logo {
+    height: 84px;
+  }
+
+  .white-container .reward-card.is-loss .reward-kicker {
+    font-size: 16px;
+    font-weight: 800;
+  }
+
+  .white-container .reward-card.is-loss .kicker-star {
+    font-size: 10px;
+  }
+
+  .white-container .reward-card.is-loss .reward-score-label {
+    margin-bottom: 9px;
+  }
+
+  .white-container .reward-card.is-loss .reward-score-detail {
+    margin-top: 13px;
+  }
+
+  .white-container .reward-card.is-loss .reward-divider {
+    margin: 30px 0 25px;
+  }
+
+  .white-container .reward-card.is-loss .reward-score-summary {
+    margin-top: 11px;
+  }
+
+  .white-container .reward-card.is-loss .reward-actions {
+    margin-top: 31px;
+  }
+}
+
+/* Preserve the desktop flow slot while visually swapping the logo and title. */
+@media (min-width: 768px) {
+  .white-container .reward-card.is-loss .reward-logo-wrap {
+    position: static;
+    top: auto;
+    width: 0;
+    height: 84px;
+    flex: 0 0 84px;
+  }
+
+  .white-container .reward-card.is-loss .reward-logo {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .white-container .reward-card.is-loss .reward-kicker-badge {
+    top: calc(50% - 174px);
+    height: auto;
+    min-height: 32px;
+  }
+
+  .white-container .reward-card.is-loss .reward-kicker {
+    font-size: clamp(30px, 3.3vw, 40px);
+    font-weight: 900;
+    line-height: 1.15;
+  }
+}
+
+@media (min-width: 1024px) {
+  .white-container .reward-card.is-loss .reward-kicker {
+    font-size: clamp(34px, 3.3vw, 40px);
+  }
+}
+
+@media (min-width: 768px) and (max-height: 520px) {
+  .white-container .reward-card.is-loss .reward-logo-wrap {
+    height: 40px;
+    flex-basis: 40px;
+  }
+}
+
+@media (max-width: 600px) {
+  .white-container .reward-card.is-loss .reward-logo-wrap {
+    position: relative;
+    top: -8px;
+  }
+}
+
+.white-container .reward-card.is-loss .reward-score-label,
+.white-container .reward-card.is-loss .reward-score-val-wrap,
+.white-container .reward-card.is-loss .reward-score-detail {
+  text-align: center;
+}
+
+.white-container .reward-card.is-loss .reward-score-val-wrap {
+  justify-content: center;
+}
+
+/* =========================================================================
+   BOOT LOADER (session verification)
+   Shown only while body.auth-pending is set by the initial markup; app.js
+   removes that class once /api/player/session resolves (or times out), and
+   the loader cross-fades into the login screen or the homepage.
+   ========================================================================= */
+.app-loader {
+  position: fixed;
+  inset: 0;
+  z-index: 1000000;
+  display: grid;
+  place-items: center;
+  padding: 24px 16px;
+  background-color: var(--stage-edge);
+  background-image: radial-gradient(circle at 50% 35%, var(--stage-center), var(--stage-edge) 75%);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity .35s ease, visibility 0s linear .35s;
+}
+body.auth-pending .app-loader {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transition: none;
+}
+.app-loader-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  text-align: center;
+  transform: translateY(0);
+  transition: transform .35s ease;
+}
+body:not(.auth-pending) .app-loader-inner { transform: translateY(-8px); }
+.app-loader-logo-wrap {
+  position: relative;
+  display: grid;
+  place-items: center;
+}
+.app-loader-logo-wrap::before {
+  content: "";
+  position: absolute;
+  inset: -18% -10%;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(245, 184, 0, .22), transparent 75%);
+  animation: appLoaderGlow 2.4s ease-in-out infinite;
+}
+.app-loader-logo {
+  position: relative;
+  width: clamp(128px, 36vw, 160px);
+  height: auto;
+  aspect-ratio: 160 / 110;
+  object-fit: contain;
+  animation: appLoaderBreathe 2.4s ease-in-out infinite;
+}
+.app-loader-text {
+  margin: 0;
+  color: var(--cream-50);
+  font-family: var(--sans);
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: .04em;
+  opacity: .85;
+}
+.app-loader-track {
+  position: relative;
+  width: 132px;
+  height: 3px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255, 248, 231, .12);
+}
+.app-loader-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 40%;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, transparent, var(--gold-500), var(--gold-300), transparent);
+  animation: appLoaderSweep 1.3s ease-in-out infinite;
+}
+.app-loader-slow {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  color: var(--text-muted);
+  font-family: var(--sans);
+  font-size: 13px;
+}
+.app-loader-slow p { margin: 0; }
+.app-loader.is-slow .app-loader-slow { display: flex; }
+.app-loader-retry {
+  min-height: 40px;
+  padding: 0 22px;
+  border: 1px solid var(--chip-line);
+  border-radius: 999px;
+  background: var(--chip-bg);
+  color: var(--gold-300);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.app-loader-retry:hover, .app-loader-retry:focus-visible { border-color: var(--gold-500); outline: none; }
+
+/* Smooth reveal of whichever screen verification lands on. Opacity only (no transform),
+   so fixed-position children of .page-wrap keep their containing block. */
+body:not(.auth-pending) .login-screen:not([hidden]),
+body.is-authenticated:not(.auth-pending) > .page-wrap {
+  animation: appReveal .35s ease-out;
+}
+
+@keyframes appLoaderSweep {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(250%); }
+}
+@keyframes appLoaderBreathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.03); }
+}
+@keyframes appLoaderGlow {
+  0%, 100% { opacity: .55; }
+  50% { opacity: 1; }
+}
+@keyframes appReveal {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-loader, .app-loader-inner { transition: none; }
+  .app-loader-logo, .app-loader-logo-wrap::before { animation: none; }
+  .app-loader-bar { animation-duration: 2.4s; }
+  body:not(.auth-pending) .login-screen:not([hidden]),
+  body.is-authenticated:not(.auth-pending) > .page-wrap { animation: none; }
+}
+
+/* =========================================================================
+   PRE-GAME COUNTDOWN (3 · 2 · 1 · GO!) — premium navy & gold overlay
+   ========================================================================= */
+.game-countdown {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background:
+    radial-gradient(60% 45% at 50% 45%, rgba(245, 184, 0, 0.16) 0%, rgba(245, 184, 0, 0) 70%),
+    radial-gradient(120% 90% at 50% 40%, rgba(16, 33, 63, 0.94) 0%, rgba(5, 12, 26, 0.97) 100%);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+
+.game-countdown[hidden] { display: none; }
+.game-countdown.is-visible { opacity: 1; }
+.game-countdown.is-leaving { opacity: 0; transition-duration: 0.3s; }
+
+.game-countdown-inner {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  align-items: center;
+  grid-template-areas: "label" "dial" "hint";
+  gap: clamp(14px, 3.5vh, 22px);
+  text-align: center;
+}
+
+.game-countdown-label {
+  grid-area: label;
+  margin: 0;
+  font-family: var(--sans);
+  font-size: clamp(13px, 3.6vw, 15px);
+  font-weight: 800;
+  letter-spacing: 0.32em;
+  padding-left: 0.32em; /* optically centre the tracked text */
+  color: var(--gold-300);
+  text-shadow: 0 0 14px rgba(245, 184, 0, 0.45);
+}
+
+/* Rotating gold ring with a soft inner glow */
+.game-countdown-ring {
+  grid-area: dial;
+  position: relative;
+  width: clamp(170px, 46vw, 220px);
+  height: clamp(170px, 46vw, 220px);
+  border-radius: 50%;
+  padding: 4px;
+  background: conic-gradient(from 0deg, #FFF3C4, #FFD24D 20%, #D99E00 45%, rgba(217, 158, 0, 0.15) 60%, #FFD24D 85%, #FFF3C4);
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 4px), #000 calc(100% - 4px));
+          mask: radial-gradient(farthest-side, transparent calc(100% - 4px), #000 calc(100% - 4px));
+  animation: countdownRingSpin 1.6s linear infinite;
+  filter: drop-shadow(0 0 18px rgba(245, 184, 0, 0.55));
+}
+
+.game-countdown-number {
+  grid-area: dial;
+  z-index: 1;
+  font-family: var(--sans);
+  font-size: clamp(84px, 24vw, 116px);
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  background: linear-gradient(180deg, #FFFFFF 0%, #FFF3D6 28%, #FFD24D 62%, #F5B800 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 4px 14px rgba(0, 0, 0, 0.5)) drop-shadow(0 0 22px rgba(245, 184, 0, 0.45));
+}
+
+.game-countdown-number.is-tick { animation: countdownPop 0.7s cubic-bezier(0.2, 0.9, 0.25, 1.15) both; }
+
+.game-countdown-number.is-go {
+  font-size: clamp(64px, 18vw, 88px);
+  letter-spacing: 0.04em;
+}
+
+.game-countdown.is-go .game-countdown-ring {
+  animation: countdownRingSpin 0.8s linear infinite, countdownRingBurst 0.6s ease-out both;
+}
+
+.game-countdown-hint {
+  grid-area: hint;
+  margin: 0;
+  font-family: var(--sans);
+  font-size: clamp(12.5px, 3.4vw, 14px);
+  font-weight: 500;
+  color: var(--cream-100);
+  opacity: 0.85;
+}
+
+@keyframes countdownRingSpin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes countdownPop {
+  0%   { opacity: 0; transform: scale(1.9); }
+  45%  { opacity: 1; transform: scale(0.94); }
+  70%  { transform: scale(1.04); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes countdownRingBurst {
+  0%   { transform: scale(1); }
+  60%  { transform: scale(1.12); filter: drop-shadow(0 0 32px rgba(255, 210, 77, 0.85)); }
+  100% { transform: scale(1.06); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .game-countdown-ring,
+  .game-countdown.is-go .game-countdown-ring { animation: none; }
+  .game-countdown-number.is-tick { animation: none; }
+}
