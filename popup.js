@@ -1,5 +1,5 @@
 /**
- * Soofi Mandi — reusable premium popup system (customer site + admin dashboard).
+ * MOZON — reusable premium popup system (customer site + admin dashboard).
  *
  *   SoofiPopup.show({ type, title, message, actions, key, dismissible }) -> Promise<actionValue|null>
  *   SoofiPopup.error(kind, overrides)  -> preset friendly error (see PRESETS)
@@ -29,7 +29,7 @@
 
   // Friendly presets. `retry` actions are wired by callers via overrides.actions.
   const PRESETS = {
-    network: { icon: "network", title: "You're offline", message: "We couldn't reach Soofi Mandi. Check your internet connection and try again." },
+    network: { icon: "network", title: "You're offline", message: "We couldn't reach MOZON. Check your internet connection and try again." },
     server: { icon: "server", title: "Something went wrong", message: "Our server had a hiccup. Please try again in a moment." },
     session: { icon: "lock", title: "Please sign in again", message: "Your session has ended. Sign in again to continue." },
     otpUnavailable: { icon: "phone", title: "OTP service unavailable", message: "We can't send OTPs right now. Refresh the page or try again later." },
@@ -44,38 +44,36 @@
 
   const STYLE = `
 .sm-popup-backdrop{position:fixed;inset:0;z-index:2147483000;display:flex;align-items:center;justify-content:center;padding:16px;
-  background:radial-gradient(120% 90% at 50% 40%,rgba(10,23,48,.72) 0%,rgba(3,8,18,.86) 100%);
-  -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);opacity:0;transition:opacity .22s ease}
+  background:rgba(43,23,23,.72);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);opacity:0;transition:opacity .22s ease}
 .sm-popup-backdrop.is-open{opacity:1}
 .sm-popup{position:relative;width:100%;max-width:400px;box-sizing:border-box;text-align:center;overflow:hidden;
-  padding:26px clamp(18px,5vw,26px) 20px;border-radius:22px;color:#FFF8E7;
-  font-family:"Poppins",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
-  background:radial-gradient(120% 70% at 50% 0%,rgba(245,184,0,.16) 0%,rgba(245,184,0,0) 60%),linear-gradient(160deg,#12264A 0%,#0A1730 55%,#060F22 100%);
-  border:1.5px solid rgba(245,184,0,.6);
-  box-shadow:0 24px 60px rgba(0,0,0,.6),0 0 28px rgba(245,184,0,.18),inset 0 1px 0 rgba(255,233,160,.18);
-  transform:translateY(14px) scale(.94);opacity:0;transition:transform .32s cubic-bezier(.2,.9,.25,1.15),opacity .22s ease}
+  padding:28px clamp(18px,5vw,26px) 22px;border-radius:20px;color:rgba(43,23,23,.88);
+  font-family:"Manrope",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  background:#FFFDF5;border:none;border-top:5px solid #E4141B;
+  box-shadow:0 4px 10px rgba(43,23,23,.16),0 28px 64px rgba(43,23,23,.34);
+  transform:translateY(14px) scale(.96);opacity:0;transition:transform .3s cubic-bezier(.2,.9,.25,1.1),opacity .22s ease}
 .sm-popup-backdrop.is-open .sm-popup{transform:none;opacity:1}
-.sm-popup::before{content:"";position:absolute;top:0;left:18%;right:18%;height:2px;background:linear-gradient(90deg,rgba(255,210,77,0),#FFD24D 50%,rgba(255,210,77,0))}
-.sm-popup-icon{width:60px;height:60px;margin:0 auto 14px;border-radius:50%;display:flex;align-items:center;justify-content:center;
-  color:#FFD24D;background:radial-gradient(circle at 50% 35%,rgba(255,210,77,.22) 0%,rgba(10,23,48,.95) 72%);
-  border:1.5px solid rgba(255,210,77,.75);box-shadow:0 0 0 5px rgba(245,184,0,.08),0 0 20px rgba(245,184,0,.3)}
-.sm-popup-icon svg{width:30px;height:30px}
-.sm-popup.is-danger .sm-popup-icon{color:#FF9A7A;border-color:rgba(255,138,112,.75);box-shadow:0 0 0 5px rgba(255,107,74,.08),0 0 20px rgba(255,107,74,.28)}
-.sm-popup.is-success .sm-popup-icon{color:#7BD88F;border-color:rgba(123,216,143,.75);box-shadow:0 0 0 5px rgba(123,216,143,.08),0 0 20px rgba(123,216,143,.28)}
-.sm-popup-title{margin:0 0 8px;font-size:clamp(17px,4.6vw,19px);font-weight:800;letter-spacing:.01em;line-height:1.3;
-  background:linear-gradient(180deg,#FFF6D8 0%,#FFD24D 60%,#F5B800 100%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
-.sm-popup-message{margin:0 auto;max-width:330px;font-size:clamp(13.5px,3.7vw,14.5px);line-height:1.55;font-weight:500;color:#F3E7CC}
-.sm-popup-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:20px}
+.sm-popup-icon{width:56px;height:56px;margin:0 auto 14px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  color:#E4141B;background:rgba(228,20,27,.08)}
+.sm-popup-icon svg{width:28px;height:28px}
+.sm-popup.is-danger .sm-popup-icon{color:#E4141B;background:rgba(228,20,27,.08)}
+.sm-popup.is-success .sm-popup-icon{color:#1F7A4D;background:rgba(31,122,77,.08)}
+.sm-popup-title{margin:0 0 8px;font-family:"Sora","Manrope",sans-serif;font-size:clamp(17px,4.6vw,19px);font-weight:800;letter-spacing:-.01em;line-height:1.3;color:#2B1717}
+.sm-popup-message{margin:0 auto;max-width:330px;font-size:clamp(13.5px,3.7vw,14.5px);line-height:1.55;font-weight:500;color:rgba(43,23,23,.72)}
+.sm-popup-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:22px}
 .sm-popup-btn{flex:1 1 130px;max-width:180px;min-height:44px;padding:10px 18px;border-radius:999px;cursor:pointer;
-  font-family:inherit;font-size:13px;font-weight:800;line-height:1.2;letter-spacing:.06em;text-transform:uppercase;transition:transform .15s ease,box-shadow .2s ease,background .2s ease}
-.sm-popup-btn.is-primary{border:none;color:#2A1408;background:linear-gradient(135deg,#FFD24D 0%,#F5B800 60%,#D99E00 100%);box-shadow:0 6px 18px rgba(245,184,0,.32)}
-.sm-popup-btn.is-primary:hover{transform:translateY(-1px);box-shadow:0 8px 22px rgba(245,184,0,.45)}
-.sm-popup-btn.is-secondary{color:#FFD24D;background:rgba(10,23,48,.6);border:1.5px solid rgba(245,184,0,.55)}
-.sm-popup-btn.is-secondary:hover{background:rgba(245,184,0,.1)}
-.sm-popup-btn:focus-visible{outline:2px solid #FFF3C4;outline-offset:3px}
+  font-family:"Sora","Manrope",sans-serif;font-size:13px;font-weight:800;line-height:1.2;letter-spacing:.06em;text-transform:uppercase;
+  transition:transform .15s ease,background-color .18s ease,border-color .18s ease}
+.sm-popup-btn.is-primary{border:none;color:#A30E13;background:#F6ED08;box-shadow:inset 0 0 0 1.5px rgba(163,14,19,.35),0 4px 12px rgba(43,23,23,.16)}
+.sm-popup-btn.is-primary:hover{background:#FFF64D;transform:translateY(-1px)}
+.sm-popup-btn.is-primary:active{background:#DCD300;transform:none}
+.sm-popup-btn.is-secondary{color:#2B1717;background:transparent;border:1.5px solid rgba(43,23,23,.24)}
+.sm-popup-btn.is-secondary:hover{border-color:#2B1717;background:rgba(228,20,27,.07)}
+.sm-popup-btn:focus-visible{outline:2px solid #E4141B;outline-offset:3px}
 .sm-popup-close{position:absolute;top:10px;right:10px;width:34px;height:34px;border-radius:50%;border:none;cursor:pointer;
-  background:transparent;color:rgba(255,248,231,.65);font-size:20px;line-height:1}
-.sm-popup-close:hover{color:#FFD24D;background:rgba(245,184,0,.1)}
+  background:transparent;color:rgba(43,23,23,.6);font-size:20px;line-height:1}
+.sm-popup-close:hover{color:#2B1717;background:rgba(228,20,27,.07)}
+.sm-popup-close:focus-visible{outline:2px solid #E4141B;outline-offset:2px}
 @media (prefers-reduced-motion:reduce){.sm-popup-backdrop,.sm-popup{transition:opacity .15s ease}.sm-popup{transform:none}}
 `;
 

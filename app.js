@@ -24,7 +24,7 @@
   const rewardCard = document.getElementById("reward-card");
 
   // Game UI & HUD Elements
-  const startGameBtn = document.getElementById("start-game-btn") || document.getElementById("play-now-btn");
+  const startGameBtn = document.getElementById("start-game-btn");
   const playAgainBtn = document.getElementById("play-again-btn");
   const resetBtn = document.getElementById("reset-btn");
   const introResetBtn = document.getElementById("intro-reset-btn");
@@ -445,12 +445,12 @@
       let name = localStorage.getItem("soofi_mandi_display_name");
       if (!name) {
         const suffix = Math.floor(1000 + Math.random() * 9000);
-        name = `MandiGuest_${suffix}`;
+        name = `MozonGuest_${suffix}`;
         localStorage.setItem("soofi_mandi_display_name", name);
       }
       return name;
     } catch (_) {
-      return "MandiGuest";
+      return "MozonGuest";
     }
   }
 
@@ -524,7 +524,7 @@
       if (!tbody) return;
 
       if (data.leaderboard.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="4" class="leaderboard-empty">No feast records yet. Be the first!</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="4" class="leaderboard-empty">No broast catches yet. Be the first!</td></tr>';
         return;
       }
 
@@ -1103,28 +1103,56 @@
   let GAME_CONFIG = Object.assign({}, DEFAULT_GAME_CONFIG, (typeof window !== "undefined" && window.GAME_CONFIG) || {});
 
   /**
-   * Exactly 3 types of authentic falling mandi delicacies:
-   * 1. Chicken Mandi — chicken-mandi.png
-   * 2. Beef Mandi — beef-mandi.png
-   * 3. Mutton Mandi — mutton-mandi.png
+   * MOZON falling broast pieces (visual only — every piece scores as normal food).
+   * Official transparent PNGs in assets/images/broast/; rendered with object-fit: contain
+   * so proportions, texture and transparency are preserved at every size.
    */
   const FOOD_TYPES = [
     {
-      id: "chicken-mandi",
-      name: "Chicken Mandi",
-      image: "assets/chicken-mandi.png"
+      id: "broast-drumstick",
+      name: "Drumstick",
+      image: "assets/images/broast/drumstick.png",
+      aspect: 1536 / 1024, // natural image ratio (sprite includes transparent padding)
+      scale: 1.2           // visual balance factor so every piece reads at a similar size
     },
     {
-      id: "beef-mandi",
-      name: "Beef Mandi",
-      image: "assets/beef-mandi.png"
+      id: "broast-piece",
+      name: "Broast Piece",
+      image: "assets/images/broast/chicken-piece.png",
+      aspect: 1536 / 1024,
+      scale: 1.08
     },
     {
-      id: "mutton-mandi",
-      name: "Mutton Mandi",
-      image: "assets/mutton-mandi.png"
+      id: "broast-wing",
+      name: "Wing",
+      image: "assets/images/broast/central-wing.png",
+      aspect: 754 / 314,
+      scale: 1.2
+    },
+    {
+      id: "broast-lower-wing",
+      name: "Lower Wing",
+      image: "assets/images/broast/lower-left-wing.png",
+      aspect: 564 / 475,
+      scale: 0.95
+    },
+    {
+      id: "broast-thigh",
+      name: "Thigh",
+      image: "assets/images/broast/thigh.png",
+      aspect: 591 / 459,
+      scale: 1
     }
   ];
+
+  // Warm the cache for the broast sprites (some are ~2 MB) so the first pieces never fall as blank boxes.
+  if (typeof Image !== "undefined") {
+    FOOD_TYPES.forEach((food) => {
+      const img = new Image();
+      img.decoding = "async";
+      img.src = food.image;
+    });
+  }
 
   // Game Runtime State
   let gameState = "intro"; // "intro" | "playing" | "results" | "revealed"
@@ -1214,12 +1242,19 @@
   }
 
   // Bucket Physics & Interaction State
-  let bucketX = 0; // Horizontal center of bucket relative to play area
+  let bucketX = 0; // Rendered horizontal centre of the bucket, relative to the play area
+  let targetBucketX = 0; // Where input wants the bucket; bucketX eases towards it every frame
+  let bucketVX = 0; // Smoothed velocity (px/s) used for the natural tilt
   let isDraggingBucket = false;
   let dragOffsetX = 0;
   let hasMovedBucket = false;
   let activePointerId = null;
   let cachedPlayAreaRect = null;
+  const heldKeys = { left: false, right: false };
+  let keyDirection = 0; // -1 left, 0 idle, 1 right (held arrow / A / D keys)
+  let sinkingItems = []; // Caught pieces animating down into the bucket (already scored and out of play)
+  let lastFoodTypeId = null;
+  const fallingItemsFront = document.getElementById("falling-items-front");
 
   function updatePlayAreaRect() {
     if (gamePlayArea) {
@@ -1227,53 +1262,40 @@
     }
   }
 
-  // Device-specific element dimensions scaled to the enlarged playfield
+  /**
+   * Bucket geometry measured from mozon_bucket.png (1278x1230, drawn object-fit: contain in a square box):
+   * the visible body spans ~15-85% of the box width, the white rim lip sits at ~20% of the box height
+   * and the base at ~86%. Collision and clamping use these fractions so they track the real artwork.
+   */
+  const BUCKET_SPRITE = {
+    rimY: 0.205,       // rim line: a piece is caught when its centre crosses this line inside the opening
+    openingHalf: 0.29, // half-width of the opening (fraction of box width), just inside the rim walls
+    bodyHalf: 0.345,   // half-width of the visible body, used to keep the bucket inside the arena walls
+    baseY: 0.856       // bottom of the visible bucket (fraction of box height)
+  };
+
+  // Responsive sizes for the bucket box and the falling pieces
   function getPlayfieldMetrics() {
     const width = window.innerWidth;
     const isMobile = width < 600;
     const isTablet = width >= 600 && width < 900;
-
-    let bucketWidth = 130;
-    let bucketHeight = 130;
-    let imageWidth = 82;
-    let imageHeight = 64;
-    let labelHeight = 22;
-
-    if (isMobile) {
-      bucketWidth = 90;
-      bucketHeight = 90;
-      imageWidth = 60;
-      imageHeight = 48;
-      labelHeight = 18;
-    } else if (isTablet) {
-      bucketWidth = 110;
-      bucketHeight = 110;
-      imageWidth = 72;
-      imageHeight = 56;
-      labelHeight = 20;
-    }
-
-    const containerWidth = Math.max(imageWidth, 90);
-    const containerHeight = imageHeight + labelHeight + 4;
-
+    const bucketSize = isMobile ? 118 : isTablet ? 138 : 156;
     return {
       isMobile,
       isTablet,
-      bucketWidth,
-      bucketHeight,
-      imageWidth,
-      imageHeight,
-      containerWidth,
-      containerHeight
+      bucketWidth: bucketSize,
+      bucketHeight: bucketSize,
+      pieceBase: isMobile ? 62 : isTablet ? 72 : 82,
+      bombSize: isMobile ? 50 : 58
     };
   }
 
   // Populate active offer details
   function applyOfferContent() {
     currentOffer = (demoOffers && demoOffers[0]) || {
-      badge: "YOUR FEAST REWARD",
-      title: "Complimentary Yemeni Delicacy",
-      description: "Enjoy a special feast reward with your dine-in experience.",
+      badge: "YOUR BROAST REWARD",
+      title: "Complimentary MOZON Broast",
+      description: "Enjoy a special broast reward with your dine-in experience.",
       instructions: "Show this screen to our staff to claim your reward."
     };
 
@@ -1308,6 +1330,7 @@
 
     document.body.classList.remove("state-intro", "state-playing", "state-results", "state-revealed");
     document.body.classList.add(`state-${stateName}`);
+    if (stateName === "intro") showIntroPanel("welcome", false);
 
     const pageWrap = document.querySelector(".page-wrap");
     if (pageWrap) {
@@ -1331,53 +1354,64 @@
     }
   }
 
-  // Position Player Bucket Horizontally (Both rear & front layers synchronized)
-  function setBucketPosition(clientX, offset = 0) {
+  // Bucket box offset so the visible base rests just above the arena floor (the sprite has transparent padding)
+  function getBucketBottomOffset(metrics) {
+    return Math.round(8 - (1 - BUCKET_SPRITE.baseY) * metrics.bucketHeight);
+  }
+
+  // Horizontal limits for the bucket centre: the visible body stays inside the arena walls
+  function getBucketBounds(rect, metrics) {
+    const margin = BUCKET_SPRITE.bodyHalf * metrics.bucketWidth + 4;
+    return { min: margin, max: Math.max(margin, rect.width - margin) };
+  }
+
+  function applyBucketLayout() {
+    const metrics = getPlayfieldMetrics();
+    const bottom = getBucketBottomOffset(metrics);
+    [bucketRear, bucketFront].forEach((b) => {
+      if (!b) return;
+      b.style.width = `${metrics.bucketWidth}px`;
+      b.style.height = `${metrics.bucketHeight}px`;
+      b.style.bottom = `${bottom}px`;
+    });
+  }
+
+  // Draw both bucket layers at bucketX with a tilt that follows the movement (transform only, no layout)
+  function renderBucket() {
+    const tilt = Math.max(-7, Math.min(7, bucketVX / 90));
+    [bucketRear, bucketFront].forEach((b) => {
+      if (!b) return;
+      b.style.setProperty("--bucket-x", `${bucketX.toFixed(1)}px`);
+      b.style.setProperty("--bucket-tilt", `${tilt.toFixed(2)}deg`);
+    });
+    if (bucketFront && cachedPlayAreaRect && cachedPlayAreaRect.width > 0) {
+      const { min, max } = getBucketBounds(cachedPlayAreaRect, getPlayfieldMetrics());
+      const pct = max > min ? Math.round(((bucketX - min) / (max - min)) * 100) : 50;
+      bucketFront.setAttribute("aria-valuenow", String(Math.max(0, Math.min(100, pct))));
+    }
+  }
+
+  // Pointer / touch input sets the target; the game loop eases the bucket towards it
+  function setBucketTarget(clientX, offset = 0) {
     if (!gamePlayArea || !bucketFront) return;
     if (!cachedPlayAreaRect) updatePlayAreaRect();
     const rect = cachedPlayAreaRect;
     if (!rect || rect.width <= 0) return;
 
     const metrics = getPlayfieldMetrics();
-    const halfWidth = metrics.bucketWidth / 2;
-    const minX = halfWidth + 6;
-    const maxX = rect.width - halfWidth - 6;
+    const { min, max } = getBucketBounds(rect, metrics);
 
-    // Smooth edge compensation:
-    // Blend offset towards 0 as finger approaches either wall so the bucket
-    // can smoothly reach 100% of both left and right edges without sticking.
+    // Blend the grab offset towards 0 near the walls so a finger at the edge still reaches the edge
     let effectiveOffset = offset;
     const touchXInArea = clientX - rect.left;
-    const edgeMargin = halfWidth * 1.5;
+    const edgeMargin = metrics.bucketWidth * 0.75;
     if (touchXInArea < edgeMargin) {
       effectiveOffset = offset * Math.max(0, touchXInArea / edgeMargin);
     } else if (touchXInArea > rect.width - edgeMargin) {
       effectiveOffset = offset * Math.max(0, (rect.width - touchXInArea) / edgeMargin);
     }
 
-    const rawX = touchXInArea - effectiveOffset;
-    const newX = Math.max(minX, Math.min(maxX, rawX));
-
-    // Slight dynamic tilt in movement direction for feedback
-    const dx = newX - bucketX;
-    const isLeft = dx < -2;
-    const isRight = dx > 2;
-
-    [bucketRear, bucketFront].forEach((b) => {
-      if (!b) return;
-      if (isRight) {
-        b.classList.remove("is-moving-left");
-        b.classList.add("is-moving-right");
-      } else if (isLeft) {
-        b.classList.remove("is-moving-right");
-        b.classList.add("is-moving-left");
-      } else {
-        b.classList.remove("is-moving-left", "is-moving-right");
-      }
-      b.style.left = `${newX}px`;
-    });
-
-    bucketX = newX;
+    targetBucketX = Math.max(min, Math.min(max, touchXInArea - effectiveOffset));
 
     if (!hasMovedBucket && bucketDragIndicator) {
       hasMovedBucket = true;
@@ -1385,16 +1419,43 @@
     }
   }
 
+  // Per-frame bucket motion: held keys move the target, then the bucket eases towards it
+  function stepBucket(dt, rect, metrics) {
+    const { min, max } = getBucketBounds(rect, metrics);
+    if (keyDirection !== 0) {
+      targetBucketX += keyDirection * rect.width * 1.15 * dt; // crosses the arena in under a second
+    }
+    targetBucketX = Math.max(min, Math.min(max, targetBucketX));
+
+    const previousX = bucketX;
+    bucketX += (targetBucketX - bucketX) * (1 - Math.exp(-dt * 20));
+    if (Math.abs(targetBucketX - bucketX) < 0.2) bucketX = targetBucketX;
+    bucketX = Math.max(min, Math.min(max, bucketX));
+
+    const instantVX = dt > 0 ? (bucketX - previousX) / dt : 0;
+    bucketVX += (instantVX - bucketVX) * Math.min(1, dt * 12);
+    renderBucket();
+  }
+
   function centerBucket() {
     if (!gamePlayArea) return;
     updatePlayAreaRect();
+    applyBucketLayout();
     const rect = cachedPlayAreaRect;
     bucketX = rect && rect.width > 0 ? rect.width / 2 : 200;
-    [bucketRear, bucketFront].forEach((b) => {
-      if (!b) return;
-      b.style.left = `${bucketX}px`;
-      b.classList.remove("is-moving-left", "is-moving-right");
-    });
+    targetBucketX = bucketX;
+    bucketVX = 0;
+    renderBucket();
+  }
+
+  function updateKeyDirection() {
+    keyDirection = (heldKeys.right ? 1 : 0) - (heldKeys.left ? 1 : 0);
+  }
+
+  function releaseHeldKeys() {
+    heldKeys.left = false;
+    heldKeys.right = false;
+    keyDirection = 0;
   }
 
   /**
@@ -1413,30 +1474,30 @@
       <svg viewBox="0 0 64 64" width="56" height="56" fill="none" aria-hidden="true">
         <defs>
           <radialGradient id="bombGrad" cx="38%" cy="38%" r="60%">
-            <stop offset="0%" stop-color="#4B5563" />
-            <stop offset="30%" stop-color="#1F2937" />
-            <stop offset="85%" stop-color="#111827" />
-            <stop offset="100%" stop-color="#030712" />
+            <stop offset="0%" stop-color="#6A6D74" />
+            <stop offset="30%" stop-color="#46494F" />
+            <stop offset="85%" stop-color="#3A2121" />
+            <stop offset="100%" stop-color="#2A2C31" />
           </radialGradient>
           <radialGradient id="sparkGrad" cx="50%" cy="50%" r="50%">
             <stop offset="0%" stop-color="#FFF" />
-            <stop offset="40%" stop-color="#FFDD57" />
-            <stop offset="80%" stop-color="#FF4D4F" />
-            <stop offset="100%" stop-color="rgba(255, 77, 79, 0)" />
+            <stop offset="40%" stop-color="#FFB3B3" />
+            <stop offset="80%" stop-color="#E4141B" />
+            <stop offset="100%" stop-color="rgba(228, 20, 27, 0)" />
           </radialGradient>
         </defs>
         <!-- Fuse Rope -->
-        <path d="M34 18 C36 12 44 14 46 8" stroke="#D97706" stroke-width="2.5" stroke-linecap="round" fill="none" />
+        <path d="M34 18 C36 12 44 14 46 8" stroke="#F6ED08" stroke-width="2.5" stroke-linecap="round" fill="none" />
         <!-- Spark at Fuse Tip -->
         <circle class="bomb-fuse-spark" cx="46" cy="8" r="4.5" fill="url(#sparkGrad)" />
         <!-- Bomb Neck/Collar -->
-        <rect x="29" y="16" width="10" height="5" rx="1.5" fill="#374151" stroke="#4B5563" stroke-width="1" />
+        <rect x="29" y="16" width="10" height="5" rx="1.5" fill="#3A2121" stroke="#6B4A4A" stroke-width="1" />
         <!-- Bomb Spherical Body -->
-        <circle cx="34" cy="38" r="22" fill="url(#bombGrad)" stroke="#374151" stroke-width="1.5" />
+        <circle cx="34" cy="38" r="22" fill="url(#bombGrad)" stroke="#FFFDF5" stroke-opacity="0.3" stroke-width="1.5" />
         <!-- Specular Highlight Shine -->
-        <ellipse cx="28" cy="28" rx="6" ry="3.5" transform="rotate(-30 28 28)" fill="#9CA3AF" opacity="0.45" />
-        <!-- Danger Flame in Gold -->
-        <path d="M34 32 C31 35 29 38 29 42 C29 45 31.2 47 34 47 C36.8 47 39 45 39 42 C39 38 37 35 34 32 Z" fill="#F59E0B" opacity="0.9" />
+        <ellipse cx="28" cy="28" rx="6" ry="3.5" transform="rotate(-30 28 28)" fill="#FFFDF5" opacity="0.3" />
+        <!-- Danger Flame in MOZON red -->
+        <path d="M34 32 C31 35 29 38 29 42 C29 45 31.2 47 34 47 C36.8 47 39 45 39 42 C39 38 37 35 34 32 Z" fill="#E4141B" opacity="0.95" />
       </svg>
     `;
 
@@ -1450,63 +1511,90 @@
   }
 
   /**
-   * Create falling food DOM element using the real PNG image + food name label beneath it.
-   * Both move together as a single unified falling object.
-   * Labels stay horizontal and readable without unwanted rotation.
+   * Create a falling broast piece: the real PNG at its natural aspect ratio (no distortion).
+   * Only the Golden Broast carries a label; regular pieces are shown as clean product imagery.
    */
-  function createFoodElement(config, metrics) {
+  function createFoodElement(config, width, height) {
     const el = document.createElement("div");
     const isGoldenMandi = (config.id === "golden-mandi");
     el.className = "falling-food-item" + (isGoldenMandi ? " is-golden-mandi" : "");
+    el.dataset.food = config.sprite || config.id;
+    el.style.width = `${width}px`;
+    el.style.height = `${height}px`;
     el.setAttribute("role", "img");
     el.setAttribute("aria-label", config.name);
 
-    // Food platter PNG image
     const img = document.createElement("img");
     img.src = config.image;
-    img.alt = config.name;
+    img.alt = "";
     img.className = "food-img";
-
-    // Food name tag placed directly beneath image
-    const label = document.createElement("span");
-    label.className = "food-name-tag";
-    label.textContent = config.name;
-
+    img.draggable = false;
     el.appendChild(img);
-    el.appendChild(label);
 
+    if (isGoldenMandi) {
+      const label = document.createElement("span");
+      label.className = "food-name-tag";
+      label.textContent = config.name;
+      el.appendChild(label);
+    }
     return el;
   }
 
-  // Spawn a Falling Item from the top (supports normal food, golden-mandi, or bomb hazard)
+  // Random broast piece, never the same type twice in a row
+  function pickFoodType() {
+    const pool = FOOD_TYPES.filter((f) => f.id !== lastFoodTypeId);
+    const food = pool[Math.floor(Math.random() * pool.length)];
+    lastFoodTypeId = food.id;
+    return food;
+  }
+
+  /**
+   * Spawn x that does not overlap other pieces: keeps clear of anything still in the upper half
+   * and of any slower piece in the same column (which this one would otherwise catch up with).
+   */
+  function findSpawnX(rect, width, swayAmp, vy) {
+    const margin = 10 + width / 2 + swayAmp;
+    const min = margin;
+    const max = rect.width - margin;
+    if (max <= min) return rect.width / 2;
+
+    for (let attempt = 0; attempt < 10; attempt++) {
+      const x = min + Math.random() * (max - min);
+      if (attempt < 6 && Math.abs(x - lastSpawnX) < width) continue; // vary consecutive spawn columns
+      const blocked = fallingItems.some((o) => {
+        const gap = (width + o.w) / 2 + swayAmp + o.swayAmp + 10;
+        if (Math.abs(x - o.x0) >= gap) return false;
+        return o.y < rect.height * 0.5 || o.vy < vy;
+      });
+      if (!blocked) return x;
+    }
+    return null;
+  }
+
+  // Position a piece: translate the box, rotate only the image (labels stay level)
+  function positionItem(item, scale = 1) {
+    item.el.style.transform = `translate3d(${(item.x - item.w / 2).toFixed(1)}px, ${(item.y - item.h / 2).toFixed(1)}px, 0)${scale !== 1 ? ` scale(${scale.toFixed(3)})` : ""}`;
+    if (item.img) item.img.style.transform = `rotate(${item.rot.toFixed(1)}deg)`;
+  }
+
+  /**
+   * Spawn one falling item (broast piece, Golden Broast or bomb hazard). Returns true when spawned,
+   * false when skipped (concurrency limit) and null when no clear position exists yet (retry shortly).
+   */
   function spawnFoodItem(forceType = null) {
-    if (!gamePlayArea || !fallingItemsLayer) return;
+    if (!gamePlayArea || !fallingItemsLayer) return false;
     const metrics = getPlayfieldMetrics();
     const maxAllowed = metrics.isMobile
       ? GAME_CONFIG.maxConcurrentFoodMobile
       : GAME_CONFIG.maxConcurrentFoodDesktop;
 
-    if (!forceType && fallingItems.length >= maxAllowed) return;
+    if (!forceType && fallingItems.length >= maxAllowed) return false;
 
-    itemsSpawnedTotal++;
-    const rect = gamePlayArea.getBoundingClientRect();
-    const minX = 18;
-    const maxX = Math.max(minX + 30, rect.width - metrics.containerWidth - 18);
+    if (!cachedPlayAreaRect || !cachedPlayAreaRect.width) updatePlayAreaRect();
+    const rect = cachedPlayAreaRect;
+    if (!rect || !rect.width) return false;
 
-    let startX = minX + Math.random() * (maxX - minX);
-    if (Math.abs(startX - lastSpawnX) < metrics.containerWidth * 1.4) {
-      startX = startX > rect.width / 2
-        ? minX + Math.random() * (rect.width / 2 - minX - metrics.containerWidth)
-        : rect.width / 2 + Math.random() * (maxX - rect.width / 2);
-      startX = Math.max(minX, Math.min(maxX, startX));
-    }
-    lastSpawnX = startX;
-
-    const minSpeed = metrics.isMobile ? GAME_CONFIG.minFallSpeedMobile : GAME_CONFIG.minFallSpeedDesktop;
-    const maxSpeed = metrics.isMobile ? GAME_CONFIG.maxFallSpeedMobile : GAME_CONFIG.maxFallSpeedDesktop;
-    const speed = minSpeed + Math.random() * (maxSpeed - minSpeed);
-
-    // Check item type determination:
+    // Item type roll (rules unchanged)
     let isBomb = false;
     let isGoldenMandi = false;
 
@@ -1524,80 +1612,102 @@
       ) {
         isBomb = true;
       }
-      // 2. Roll Golden Mandi if enabled, not a bomb, and no golden mandi currently falling (exactly 1.5% chance, max 1 active)
-      const hasFallingMandi = fallingItems.some(i => i.isGoldenMandi);
+      // 2. Roll Golden Broast if enabled, not a bomb, and none currently falling (exactly 1.5% chance, max 1 active)
+      const hasFallingGolden = fallingItems.some(i => i.isGoldenMandi);
       if (
         !isBomb &&
         GAME_FEATURES.goldenMandi &&
-        !hasFallingMandi &&
+        !hasFallingGolden &&
         Math.random() < (GAME_CONFIG.goldenMandiSpawnChance || 0.015)
       ) {
         isGoldenMandi = true;
       }
     }
 
+    // Size: each sprite's natural aspect ratio, a per-sprite visual balance factor and +/-12% variety
+    let food = null;
+    let w;
+    let h;
     if (isBomb) {
-      const el = createBombElement(metrics);
-      const startY = -metrics.containerHeight;
-      el.style.transform = `translate3d(${startX}px, ${startY}px, 0)`;
-      fallingItemsLayer.appendChild(el);
-
-      fallingItems.push({
-        el,
-        x: startX,
-        y: startY,
-        imageHeight: 56,
-        containerWidth: metrics.containerWidth,
-        containerHeight: metrics.containerHeight,
-        vy: speed * 1.05,
-        caught: false,
-        missed: false,
-        isBomb: true,
-        isGoldenMandi: false,
-        itemType: "bomb"
-      });
-      return;
+      w = h = metrics.bombSize;
+    } else {
+      food = pickFoodType();
+      w = metrics.pieceBase * food.scale * (0.88 + Math.random() * 0.24);
+      h = w / food.aspect;
     }
 
-    // Food item (normal or golden mandi)
-    const baseFood = FOOD_TYPES[Math.floor(Math.random() * FOOD_TYPES.length)];
-    const foodConfig = isGoldenMandi ? {
-      id: "golden-mandi",
-      name: "Golden Mandi",
-      image: baseFood.image
-    } : baseFood;
+    // Balanced speed: configured range, scaled to the arena height, with a gentle ramp over the round
+    const minSpeed = metrics.isMobile ? GAME_CONFIG.minFallSpeedMobile : GAME_CONFIG.minFallSpeedDesktop;
+    const maxSpeed = metrics.isMobile ? GAME_CONFIG.maxFallSpeedMobile : GAME_CONFIG.maxFallSpeedDesktop;
+    const heightScale = Math.max(0.85, Math.min(1.3, rect.height / 560));
+    const elapsedSec = Math.max(0, (performance.now() - roundStartTime) / 1000);
+    const ramp = 1 + Math.min(0.2, elapsedSec * 0.004);
+    const vy = (minSpeed + Math.random() * (maxSpeed - minSpeed)) * heightScale * ramp * (isBomb ? 1.05 : 1);
 
-    const el = createFoodElement(foodConfig, metrics);
-    const startY = -metrics.containerHeight;
-    el.style.transform = `translate3d(${startX}px, ${startY}px, 0)`;
-    fallingItemsLayer.appendChild(el);
+    const swayAmp = isBomb ? 3 : 5 + Math.random() * 9;
+    let x0 = findSpawnX(rect, w, swayAmp, vy);
+    if (x0 === null) {
+      if (!forceType) return null;
+      x0 = rect.width / 2;
+    }
+    lastSpawnX = x0;
+    itemsSpawnedTotal++;
 
-    fallingItems.push({
+    let el;
+    let img = null;
+    if (isBomb) {
+      el = createBombElement(metrics);
+      el.style.width = `${w}px`;
+      el.style.height = `${h}px`;
+    } else {
+      const foodConfig = isGoldenMandi ? {
+        id: "golden-mandi",
+        name: "Golden Broast",
+        image: food.image,
+        sprite: food.id
+      } : food;
+      el = createFoodElement(foodConfig, w, h);
+      img = el.querySelector(".food-img");
+    }
+
+    const item = {
       el,
-      x: startX,
-      y: startY,
-      imageHeight: metrics.imageHeight,
-      containerWidth: metrics.containerWidth,
-      containerHeight: metrics.containerHeight,
-      vy: speed,
+      img,
+      x0,
+      x: x0,
+      y: -h / 2 - 4,
+      w,
+      h,
+      vy,
+      t: 0,
+      rot: isBomb ? 0 : -30 + Math.random() * 60,
+      vr: isBomb ? 0 : (Math.random() < 0.5 ? -1 : 1) * (25 + Math.random() * 65),
+      swayAmp,
+      swayFreq: 1.1 + Math.random() * 0.9,
+      swayPhase: Math.random() * Math.PI * 2,
+      passedRim: false,
       caught: false,
       missed: false,
-      isBomb: false,
+      isBomb,
       isGoldenMandi,
-      itemType: isGoldenMandi ? "golden-mandi" : "normal"
-    });
+      itemType: isBomb ? "bomb" : (isGoldenMandi ? "golden-mandi" : "normal")
+    };
+    positionItem(item);
+    fallingItemsLayer.appendChild(el);
+    fallingItems.push(item);
+    return true;
   }
 
-  // Handle successful item catch — Food visibly drops into the open bucket interior
-  function handleCatch(item, index) {
+  // Handle a successful catch: score + server telemetry exactly as before, then the piece sinks into the bucket
+  function handleCatch(item, index, rimY) {
     if (item.caught || gameState !== "playing") return;
     item.caught = true;
 
     const eventTime = Math.max(0, Math.round(performance.now() - roundStartTime));
-    const catchCenterX = item.x + item.containerWidth / 2;
-    const catchCenterY = item.y;
+    const catchCenterX = bucketX;
+    const catchCenterY = rimY - 14;
 
-    // Bucket pulse feedback
+    // Bucket dip feedback
     [bucketRear, bucketFront].forEach((b) => {
       if (!b) return;
       b.classList.remove("is-caught-pulse");
@@ -1625,7 +1735,7 @@
         });
       }
     }
-    // 2. Handling Food Catch (Normal Food or Golden Mandi)
+    // 2. Handling Food Catch (Broast piece or Golden Broast)
     else {
       foodCaughtCount++;
       consecutiveCatches++;
@@ -1646,7 +1756,7 @@
         Sound.comboActivation();
         updateEnhancementsHUD(true);
         if (GAME_FEATURES.floatingScores) {
-          setTimeout(() => spawnFloatingPopup("COMBO x2!", "is-combo-popup", catchCenterX, catchCenterY - 24, 750), 120);
+          setTimeout(() => spawnFloatingPopup("COMBO x2!", "is-combo-popup", catchCenterX, catchCenterY - 26, 750), 120);
         }
       } else {
         updateEnhancementsHUD(false);
@@ -1689,27 +1799,47 @@
       gameScoreEl.classList.add("pop");
     }
 
-    // Trigger visual pop animation on the caught item
-    const currentTransform = `translate3d(${item.x}px, ${item.y}px, 0)`;
-    item.el.style.setProperty("--current-transform", currentTransform);
-    item.el.classList.add("is-caught");
-
-    setTimeout(() => {
-      if (item.el && item.el.parentNode) {
-        item.el.remove();
-      }
-    }, 360);
-
+    // Out of play immediately; the piece then slides to the centre and sinks behind the front wall
     fallingItems.splice(index, 1);
+    const metrics = getPlayfieldMetrics();
+    item.sinkT = 0;
+    item.sinkFromY = item.y;
+    item.sinkDepth = metrics.bucketHeight * 0.3 + item.h / 2;
+    item.offsetX = item.x - bucketX;
+    item.el.classList.add("is-caught");
+    sinkingItems.push(item);
   }
 
-  // Clear all falling items from DOM and memory
+  // Animate caught pieces into the bucket (they follow the bucket while sinking)
+  function updateSinkingItems(dt) {
+    for (let i = sinkingItems.length - 1; i >= 0; i--) {
+      const s = sinkingItems[i];
+      s.sinkT += dt;
+      const p = Math.min(1, s.sinkT / 0.32);
+      s.x = bucketX + s.offsetX * (1 - p);
+      s.y = s.sinkFromY + p * p * s.sinkDepth;
+      s.rot += s.vr * 0.35 * dt;
+      positionItem(s, 1 - 0.22 * p);
+      s.el.style.opacity = String(1 - Math.max(0, (p - 0.6) / 0.4));
+      if (p >= 1) {
+        s.el.remove();
+        sinkingItems.splice(i, 1);
+      }
+    }
+  }
+
+  // Clear all falling and sinking items from DOM and memory
   function clearFallingItems() {
     if (fallingItemsLayer) {
       fallingItemsLayer.innerHTML = "";
     }
+    if (fallingItemsFront) {
+      fallingItemsFront.innerHTML = "";
+    }
     fallingItems = [];
+    sinkingItems = [];
     lastSpawnX = -999;
+    lastFoodTypeId = null;
   }
 
   // Main Game Loop (requestAnimationFrame) — Ends solely on 5 misses
@@ -1717,60 +1847,55 @@
     if (gameState !== "playing" || isGamePaused) return;
 
     if (!lastFrameTime) lastFrameTime = now;
-    const dt = Math.min(0.1, (now - lastFrameTime) / 1000);
+    const dt = Math.min(0.05, (now - lastFrameTime) / 1000);
     lastFrameTime = now;
 
-    // Spawning cadence
+    if (!cachedPlayAreaRect || !cachedPlayAreaRect.width) updatePlayAreaRect();
+    const rect = cachedPlayAreaRect;
+    const areaHeight = gamePlayArea.clientHeight || rect.height || 500;
+    const metrics = getPlayfieldMetrics();
+
+    stepBucket(dt, rect, metrics);
+
+    // Spawning cadence (retry quickly when no clear spawn position exists yet)
     spawnCooldown -= dt;
     if (spawnCooldown <= 0) {
-      spawnFoodItem();
-      spawnCooldown = GAME_CONFIG.minSpawnInterval + Math.random() * (GAME_CONFIG.maxSpawnInterval - GAME_CONFIG.minSpawnInterval);
+      const spawned = spawnFoodItem();
+      spawnCooldown = spawned === null
+        ? 0.12
+        : GAME_CONFIG.minSpawnInterval + Math.random() * (GAME_CONFIG.maxSpawnInterval - GAME_CONFIG.minSpawnInterval);
     }
 
-    // Update falling items & accurate collision detection
-    const metrics = getPlayfieldMetrics();
-    const areaRect = gamePlayArea.getBoundingClientRect();
-    const areaHeight = areaRect.height || 500;
-
-    // 3D Bucket Rim Geometry:
-    const bucketTop = areaHeight - metrics.bucketHeight - 8;
-    const bucketRimTop = bucketTop + metrics.bucketHeight * 0.155;
-    const bucketFrontLip = bucketTop + metrics.bucketHeight * 0.367;
-
-    // Catch zone: Food platter enters into the bucket cavity
-    const catchTop = bucketRimTop - 4;
-    const catchBottom = bucketFrontLip + metrics.bucketHeight * 0.12;
-
-    // Bucket opening horizontal bounds (~80% of bucket width accounting for side padding)
-    const openingHalfWidth = metrics.bucketWidth * 0.40;
-    const bucketLeft = bucketX - openingHalfWidth;
-    const bucketRight = bucketX + openingHalfWidth;
+    // Rim line of the bucket opening, from the measured sprite geometry
+    const bucketTop = areaHeight - getBucketBottomOffset(metrics) - metrics.bucketHeight;
+    const rimY = bucketTop + BUCKET_SPRITE.rimY * metrics.bucketHeight;
+    const openingHalf = BUCKET_SPRITE.openingHalf * metrics.bucketWidth;
 
     for (let i = fallingItems.length - 1; i >= 0; i--) {
       const item = fallingItems[i];
-      if (item.caught) continue;
 
+      const previousY = item.y;
+      item.t += dt;
       item.y += item.vy * dt;
-      item.el.style.transform = `translate3d(${item.x}px, ${item.y}px, 0)`;
+      item.x = item.x0 + Math.sin(item.swayPhase + item.t * item.swayFreq) * item.swayAmp;
+      item.rot += item.vr * dt;
 
-      // Collision calculated based strictly on item reaching the rim
-      const itemBottom = item.y + (item.isBomb ? 50 : item.imageHeight * 0.90);
-      const itemCenter = item.x + item.containerWidth / 2;
-
-      // 1. Successful Catch Check
-      if (
-        itemBottom >= catchTop &&
-        itemBottom <= catchBottom &&
-        itemCenter >= bucketLeft &&
-        itemCenter <= bucketRight
-      ) {
-        handleCatch(item, i);
-        continue;
+      // Caught only when the piece's centre crosses the rim line inside the bucket opening
+      if (!item.passedRim && previousY < rimY && item.y >= rimY) {
+        if (Math.abs(item.x - bucketX) <= openingHalf) {
+          handleCatch(item, i, rimY);
+          continue;
+        }
+        // Missed the opening: it can no longer be caught and falls past in front of the bucket
+        item.passedRim = true;
+        if (fallingItemsFront) fallingItemsFront.appendChild(item.el);
       }
 
-      // 2. Item leaves bottom of playfield
-      if (item.y > areaHeight + 25) {
-        if (!item.caught && !item.missed) {
+      positionItem(item);
+
+      // Item leaves the bottom of the playfield
+      if (item.y - item.h / 2 > areaHeight + 10) {
+        if (!item.missed) {
           item.missed = true;
 
           // Safe avoidance for bomb: no penalty, no miss count increment, no combo reset!
@@ -1781,7 +1906,7 @@
               timestamp: Math.max(0, Math.round(performance.now() - roundStartTime))
             });
           } else {
-            // Food item miss (Normal or Golden Mandi)
+            // Food item miss (broast piece or Golden Broast)
             missedCount++;
             updateMissesDisplay();
 
@@ -1815,6 +1940,8 @@
       }
     }
 
+    updateSinkingItems(dt);
+
     gameAnimId = requestAnimationFrame(gameLoop);
   }
 
@@ -1846,9 +1973,6 @@
     isDraggingBucket = false;
     dragOffsetX = 0;
     activePointerId = null;
-    [bucketRear, bucketFront].forEach((b) => {
-      if (b) b.classList.remove("is-moving-left", "is-moving-right");
-    });
     try {
       if (gamePlayArea && event && event.pointerId !== undefined && gamePlayArea.hasPointerCapture(event.pointerId)) {
         gamePlayArea.releasePointerCapture(event.pointerId);
@@ -1872,8 +1996,9 @@
       gameAnimId = null;
     }
 
-    // 2. Stop dragging bucket
+    // 2. Stop dragging bucket and release held movement keys
     stopDraggingBucket();
+    releaseHeldKeys();
 
     // 3. Update Pause Overlay stats
     if (pauseStatScore) {
@@ -1947,7 +2072,7 @@
     }
   }
 
-  // Start / Restart Catch the Feast game
+  // Start / Restart Bucket Catch The Broast game
   // Clears pause state and hides the pause overlay (used when starting a round or leaving it).
   function clearPauseState() {
     isGamePaused = false;
@@ -1965,6 +2090,7 @@
   function startGame() {
     if (!isAuthenticated) return;
     stopDraggingBucket();
+    releaseHeldKeys();
     updatePlayAreaRect();
 
     // Reset any pause state
@@ -1996,7 +2122,7 @@
     foodCaughtCount = 0;
     itemsSpawnedTotal = 0;
     roundEvents = [];
-    spawnCooldown = 0.22; // First food item spawns promptly
+    spawnCooldown = 0.22; // First piece spawns promptly
     lastFrameTime = 0;
     hasMovedBucket = false;
     roundStartTime = performance.now();
@@ -2066,7 +2192,7 @@
   }
 
   function configureRoundResult(finalScore, finalCaught) {
-    const scoreSummaryText = finalCaught === 1 ? "You caught 1 food item!" : `You caught ${finalCaught} food items!`;
+    const scoreSummaryText = finalCaught === 1 ? "You caught 1 piece of broast!" : `You caught ${finalCaught} pieces of broast!`;
 
     if (interstitialScoreVal) interstitialScoreVal.textContent = String(finalScore);
     if (interstitialScoreDesc) interstitialScoreDesc.textContent = scoreSummaryText;
@@ -2094,7 +2220,7 @@
     }
   }
 
-  // End of Round: Triggered immediately when player reaches 5 missed food items
+  // End of Round: Triggered immediately when player reaches 5 missed pieces
   function endGameLoss() {
     stopDraggingBucket();
     isGamePaused = false;
@@ -2196,15 +2322,14 @@
 
     stopConfetti();
 
-    // Palette with vibrant gold, cream, forest green, and sand for celebratory theme
+    // MOZON palette: electric yellow and soft white lead on the red page, with deep red and warm black accents
     const confettiPalette = [
-      "#F5B800",
-      "#FFD24D",
-      "#D99E00",
-      "#FFF8E7",
-      "#F0E3C4",
-      "#7BD88F",
-      "#1B5E45"
+      "#F6ED08",
+      "#F6ED08",
+      "#FFFDF5",
+      "#FFFDF5",
+      "#A30E13",
+      "#2B1717"
     ];
 
     const isMobile = window.innerWidth < 600;
@@ -2411,7 +2536,7 @@
     switchView(viewIntro, "intro");
   }
 
-  // Bucket Drag Event Listeners (Pointer Events for Touch & Mouse)
+  // Bucket input: Pointer Events for mouse and touch (drag anywhere in the arena)
   if (gamePlayArea) {
     gamePlayArea.addEventListener("pointerdown", (event) => {
       if (gameState !== "playing" || isGamePaused) return;
@@ -2421,16 +2546,12 @@
       activePointerId = event.pointerId;
 
       const rect = cachedPlayAreaRect || gamePlayArea.getBoundingClientRect();
-      const currentTouchX = event.clientX - rect.left;
+      const touchX = event.clientX - rect.left;
       const metrics = getPlayfieldMetrics();
 
-      // If touched on or near bucket, smoothly track offset so the bucket NEVER jumps!
-      if (Math.abs(currentTouchX - bucketX) < metrics.bucketWidth * 0.8) {
-        dragOffsetX = currentTouchX - bucketX;
-      } else {
-        dragOffsetX = 0;
-        setBucketPosition(event.clientX, 0);
-      }
+      // Grabbing the bucket keeps the finger's offset (no jump); touching elsewhere glides it there
+      dragOffsetX = Math.abs(touchX - bucketX) < metrics.bucketWidth * 0.6 ? touchX - bucketX : 0;
+      setBucketTarget(event.clientX, dragOffsetX);
 
       try {
         gamePlayArea.setPointerCapture(event.pointerId);
@@ -2441,7 +2562,7 @@
       if (gameState !== "playing" || isGamePaused) return;
       if (activePointerId !== null && event.pointerId !== activePointerId) return;
       if (isDraggingBucket || event.pointerType === "mouse") {
-        setBucketPosition(event.clientX, isDraggingBucket ? dragOffsetX : 0);
+        setBucketTarget(event.clientX, isDraggingBucket ? dragOffsetX : 0);
       }
     }, { passive: true });
 
@@ -2453,66 +2574,54 @@
     window.addEventListener("pointermove", (event) => {
       if (gameState !== "playing" || isGamePaused || !isDraggingBucket) return;
       if (activePointerId !== null && event.pointerId !== activePointerId) return;
-      setBucketPosition(event.clientX, dragOffsetX);
+      setBucketTarget(event.clientX, dragOffsetX);
     }, { passive: true });
 
     window.addEventListener("pointerup", stopDraggingBucket);
     window.addEventListener("pointercancel", stopDraggingBucket);
 
-    // Keyboard Controls for Bucket (Accessibility: Left/Right Arrow Keys)
+    // Keyboard: hold Left/Right arrows (or A/D) for smooth continuous movement
+    const keySide = (event) => {
+      if (event.key === "ArrowLeft" || event.key === "a" || event.key === "A") return "left";
+      if (event.key === "ArrowRight" || event.key === "d" || event.key === "D") return "right";
+      return null;
+    };
+
     window.addEventListener("keydown", (event) => {
       if (gameState !== "playing" || isGamePaused) return;
-      if (!cachedPlayAreaRect) updatePlayAreaRect();
-      const rect = cachedPlayAreaRect || gamePlayArea.getBoundingClientRect();
-      const metrics = getPlayfieldMetrics();
-      const halfWidth = metrics.bucketWidth / 2;
-      const step = 32;
-
-      if (event.key === "ArrowLeft") {
-        event.preventDefault();
-        const newX = Math.max(halfWidth + 6, bucketX - step);
-        [bucketRear, bucketFront].forEach((b) => {
-          if (!b) return;
-          b.style.left = `${newX}px`;
-          b.classList.remove("is-moving-right");
-          b.classList.add("is-moving-left");
-        });
-        bucketX = newX;
-        if (bucketDragIndicator) bucketDragIndicator.classList.add("is-hidden");
-      } else if (event.key === "ArrowRight") {
-        event.preventDefault();
-        const newX = Math.min(rect.width - halfWidth - 6, bucketX + step);
-        [bucketRear, bucketFront].forEach((b) => {
-          if (!b) return;
-          b.style.left = `${newX}px`;
-          b.classList.remove("is-moving-left");
-          b.classList.add("is-moving-right");
-        });
-        bucketX = newX;
-        if (bucketDragIndicator) bucketDragIndicator.classList.add("is-hidden");
+      const target = event.target;
+      if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)) return;
+      const side = keySide(event);
+      if (!side) return;
+      event.preventDefault();
+      heldKeys[side] = true;
+      updateKeyDirection();
+      if (!hasMovedBucket && bucketDragIndicator) {
+        hasMovedBucket = true;
+        bucketDragIndicator.classList.add("is-hidden");
       }
     });
 
     window.addEventListener("keyup", (event) => {
-      if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
-        [bucketRear, bucketFront].forEach((b) => {
-          if (b) b.classList.remove("is-moving-left", "is-moving-right");
-        });
-      }
+      const side = keySide(event);
+      if (!side) return;
+      heldKeys[side] = false;
+      updateKeyDirection();
     });
+
+    window.addEventListener("blur", releaseHeldKeys);
   }
 
-  // Recalculate and clamp bucket on window resize
+  // Recalculate sizes and clamp the bucket on window resize
   window.addEventListener("resize", () => {
     updatePlayAreaRect();
     if (gamePlayArea && bucketFront) {
+      applyBucketLayout();
       const rect = cachedPlayAreaRect || gamePlayArea.getBoundingClientRect();
-      const metrics = getPlayfieldMetrics();
-      const halfWidth = metrics.bucketWidth / 2;
-      bucketX = Math.max(halfWidth + 6, Math.min(rect.width - halfWidth - 6, bucketX));
-      [bucketRear, bucketFront].forEach((b) => {
-        if (b) b.style.left = `${bucketX}px`;
-      });
+      const { min, max } = getBucketBounds(rect, getPlayfieldMetrics());
+      bucketX = Math.max(min, Math.min(max, bucketX));
+      targetBucketX = Math.max(min, Math.min(max, targetBucketX));
+      renderBucket();
     }
   });
 
@@ -2536,6 +2645,9 @@
     countdownActive = true;
     const steps = ["3", "2", "1", "GO!"];
     const stepMs = 700;
+    gameCountdown.style.setProperty("--countdown-step", `${stepMs}ms`);
+    const hint = document.getElementById("game-countdown-hint");
+    if (hint) hint.textContent = isTouchDevice() ? "Drag to move your bucket" : "Hold ← → or A / D to move";
     gameCountdown.hidden = false;
     gameCountdown.classList.remove("is-leaving", "is-go");
     requestAnimationFrame(() => gameCountdown.classList.add("is-visible"));
@@ -2548,8 +2660,10 @@
       gameCountdownNumber.classList.toggle("is-go", isGo);
       gameCountdown.classList.toggle("is-go", isGo);
       gameCountdownNumber.classList.remove("is-tick");
-      void gameCountdownNumber.offsetWidth; // restart the pop animation
+      gameCountdown.classList.remove("is-ticking");
+      void gameCountdownNumber.offsetWidth; // restart the pop and ring animations
       gameCountdownNumber.classList.add("is-tick");
+      gameCountdown.classList.add("is-ticking");
 
       if (!isGo) {
         index += 1;
@@ -2562,12 +2676,63 @@
         onDone();
         window.setTimeout(() => {
           gameCountdown.hidden = true;
-          gameCountdown.classList.remove("is-leaving", "is-go");
+          gameCountdown.classList.remove("is-leaving", "is-go", "is-ticking");
           countdownActive = false;
         }, 300);
       }, 550);
     };
     showStep();
+  }
+
+  // Entry flow: Welcome → How to play → countdown → round.
+  // Element lookups happen inside the functions so switchView() can call them at any time.
+  function isTouchDevice() {
+    return Boolean(window.matchMedia && window.matchMedia("(pointer: coarse)").matches);
+  }
+
+  // How-to numbers come from the live game config so the copy can never drift from the real rules
+  function fillHowtoDetails() {
+    const set = (key, value) => {
+      document.querySelectorAll(`[data-howto="${key}"]`).forEach((el) => { el.textContent = String(value); });
+    };
+    set("miss-limit", MAX_MISSES);
+    set("reward-score", GAME_CONFIG.offerEligibilityScore || 100);
+    set("golden-points", GAME_CONFIG.goldenMandiPoints || 3);
+    set("bomb-points", `−${Math.abs(GAME_CONFIG.bombPoints || -10)}`);
+    document.querySelectorAll(".howto-bonus [data-feature]").forEach((el) => {
+      el.hidden = !GAME_FEATURES[el.dataset.feature];
+    });
+    const touch = isTouchDevice();
+    document.querySelectorAll(".howto-control").forEach((el) => {
+      el.classList.toggle("is-current-device", (el.dataset.device === "touch") === touch);
+    });
+  }
+
+  function showIntroPanel(panel, moveFocus = true) {
+    const welcome = document.getElementById("intro-welcome");
+    const howto = document.getElementById("intro-howto");
+    if (!welcome || !howto) return;
+    const showHowto = panel === "howto";
+    if (showHowto) fillHowtoDetails();
+    welcome.hidden = showHowto;
+    howto.hidden = !showHowto;
+    if (moveFocus) {
+      window.scrollTo(0, 0);
+      const target = document.getElementById(showHowto ? "start-game-btn" : "play-now-btn");
+      if (target) target.focus({ preventScroll: true });
+    }
+  }
+
+  const playNowBtn = document.getElementById("play-now-btn");
+  if (playNowBtn) {
+    playNowBtn.addEventListener("click", () => {
+      trackEvent("cta_click", { target: "play_now" });
+      showIntroPanel("howto");
+    });
+  }
+  const howtoBackBtn = document.getElementById("howto-back-btn");
+  if (howtoBackBtn) {
+    howtoBackBtn.addEventListener("click", () => showIntroPanel("welcome"));
   }
 
   // Action Button Listeners
@@ -2916,7 +3081,7 @@
     }
 
     if (rewardKicker) {
-      rewardKicker.textContent = "✦ OFFER REVEALED ✦";
+      rewardKicker.textContent = "OFFER REVEALED";
     }
 
     // Completely remove score header and offer buttons from the final reveal screen
@@ -2940,15 +3105,15 @@
     }
 
     const offer = claim.offer || (demoOffers && demoOffers[0]) || {
-      badge: "YOUR FEAST REWARD",
-      title: "Complimentary Yemeni Delicacy",
-      description: "Enjoy a special feast reward with your dine-in experience.",
+      badge: "YOUR BROAST REWARD",
+      title: "Complimentary MOZON Broast",
+      description: "Enjoy a special broast reward with your dine-in experience.",
       instructions: "Show this screen to our staff to claim your reward."
     };
 
     const offerBadgeEl = document.getElementById("offer-badge");
     if (offerBadgeEl) {
-      offerBadgeEl.textContent = offer.badge || "YOUR FEAST REWARD";
+      offerBadgeEl.textContent = offer.badge || "YOUR BROAST REWARD";
       offerBadgeEl.style.display = "none";
     }
 
@@ -2975,8 +3140,8 @@
     const offerClaimCodeEl = document.getElementById("offer-claim-code");
     if (offerClaimCodeEl) {
       const codeStr = claim.claimId
-        ? claim.claimId.replace(/^claim_/, "SOOFI-").toUpperCase().substring(0, 16)
-        : "SOOFI-REWARD";
+        ? claim.claimId.replace(/^claim_/, "MOZON-").toUpperCase().substring(0, 16)
+        : "MOZON-REWARD";
       offerClaimCodeEl.textContent = codeStr;
     }
 
@@ -3160,7 +3325,7 @@
       spawnCooldown = 0.22;
       lastFrameTime = 0;
       lastSpawnX = -999;
-      fallingItems = [];
+      clearFallingItems();
       hasMovedBucket = false;
 
       if (gameScoreEl) gameScoreEl.textContent = String(score);
@@ -3295,12 +3460,15 @@
       playerId = "";
       document.body.classList.remove("is-authenticated");
       clearSavedPlayerState();
+      configurePlayerEntry(result);
       loginScreen.hidden = false;
       if (loginError) loginError.textContent = "";
     } catch (error) {
       isAuthenticated = false;
       playerId = "";
       document.body.classList.remove("is-authenticated");
+      const loginSupporting = document.getElementById("login-supporting");
+      if (loginSupporting) loginSupporting.textContent = "We couldn't reach the game server.";
       loginScreen.hidden = false;
       if (loginError) loginError.textContent = "";
       showErrorPopup("network", {
@@ -3317,6 +3485,123 @@
       if (timeoutId) clearTimeout(timeoutId);
       document.body.classList.remove("auth-pending");
     }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Player entry. The server decides the mode (GET /api/player/session):
+  //   "demo" - name-only sign-in for local client demonstrations (POST /api/auth/demo);
+  //            MSG91 is never loaded, so no OTP or captcha appears.
+  //   "otp"  - production MSG91 OTP sign-in; the widget loads with settings from the server.
+  // Both end in the same HttpOnly server session, so game sessions and score verification are shared.
+  // ---------------------------------------------------------------------------
+  function loadOtpWidget(otpConfig) {
+    if (window.__mozonOtpWidgetRequested) return;
+    window.__mozonOtpWidgetRequested = true;
+    if (!otpConfig || !otpConfig.widgetId || !otpConfig.tokenAuth) {
+      console.error("OTP sign-in is not configured on this server (MSG91 widget settings missing).");
+      return;
+    }
+    window.SOOFI_MANDI_MSG91_CONFIG = {
+      widgetId: otpConfig.widgetId,
+      tokenAuth: otpConfig.tokenAuth,
+      exposeMethods: true,
+      success: function () {},
+      failure: function () {}
+    };
+    const script = document.createElement("script");
+    script.async = true;
+    script.src = "https://verify.msg91.com/otp-provider.js";
+    script.onload = () => {
+      try { window.initSendOTP(window.SOOFI_MANDI_MSG91_CONFIG); } catch (_) { console.error("MSG91 widget failed to initialise."); }
+    };
+    script.onerror = () => console.error("MSG91 widget failed to load.");
+    document.head.appendChild(script);
+  }
+
+  function configurePlayerEntry(sessionResult) {
+    const isDemo = Boolean(sessionResult && sessionResult.entryMode === "demo");
+    const demoForm = document.getElementById("demo-entry-form");
+    const demoBadge = document.getElementById("demo-badge");
+    const loginSupporting = document.getElementById("login-supporting");
+    if (demoBadge) demoBadge.hidden = !isDemo;
+    if (demoForm) demoForm.hidden = !isDemo;
+    if (loginPhoneForm) loginPhoneForm.hidden = isDemo;
+    if (loginOtpForm) loginOtpForm.hidden = true;
+    if (loginSupporting) {
+      loginSupporting.textContent = isDemo
+        ? "Enter your name to play Bucket Catch The Broast."
+        : "Login to play Bucket Catch The Broast.";
+    }
+    if (isDemo) {
+      const nameInput = document.getElementById("demo-player-name");
+      if (nameInput && !nameInput.value && playerDisplayName && !/^MozonGuest(_\d+)?$/.test(playerDisplayName)) {
+        nameInput.value = playerDisplayName;
+      }
+    } else {
+      loadOtpWidget(sessionResult && sessionResult.otp);
+    }
+  }
+
+  const demoEntryForm = document.getElementById("demo-entry-form");
+  if (demoEntryForm) {
+    const demoNameInput = document.getElementById("demo-player-name");
+    const demoEntryError = document.getElementById("demo-entry-error");
+    const demoSubmitBtn = demoEntryForm.querySelector('button[type="submit"]');
+    const demoSubmitLabel = demoSubmitBtn ? demoSubmitBtn.innerHTML : "";
+    let demoSubmitting = false;
+
+    demoEntryForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      if (demoSubmitting) return;
+      const name = (demoNameInput ? demoNameInput.value : "").replace(/\s+/g, " ").trim();
+      if (name.length < 2 || name.length > 20) {
+        if (demoEntryError) demoEntryError.textContent = "Please enter a name of 2–20 letters or numbers.";
+        if (demoNameInput) demoNameInput.focus();
+        return;
+      }
+      if (demoEntryError) demoEntryError.textContent = "";
+      demoSubmitting = true;
+      if (demoSubmitBtn) {
+        demoSubmitBtn.disabled = true;
+        demoSubmitBtn.textContent = "Starting…";
+      }
+      try {
+        const response = await fetch("/api/auth/demo", {
+          method: "POST",
+          credentials: "same-origin",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ displayName: name })
+        });
+        let result = null;
+        try { result = await response.json(); } catch (_) {}
+        if (!response.ok || !result || result.success !== true || typeof result.playerId !== "string" || !result.playerId) {
+          if (demoEntryError) demoEntryError.textContent = (result && result.message) || "Couldn't start the demo. Please try again.";
+          return;
+        }
+
+        isAuthenticated = true;
+        playerId = result.playerId;
+        playerDisplayName = typeof result.displayName === "string" && result.displayName ? result.displayName : name;
+        try { localStorage.setItem("soofi_mandi_display_name", playerDisplayName); } catch (_) {}
+        clearSavedPlayerState();
+        updateDisplayNameUI(playerDisplayName);
+        loginScreen.hidden = true;
+        document.body.classList.add("is-authenticated");
+        trackEvent("page_visit", { path: window.location.pathname });
+        if (isNewSession) trackEvent("session_start");
+        trackEvent("cta_click", { target: "demo_start_game" });
+        switchView(viewIntro, "intro");
+        runStartCountdown(startGame);
+      } catch (_) {
+        if (demoEntryError) demoEntryError.textContent = "We couldn't reach the game server. Check your connection and try again.";
+      } finally {
+        demoSubmitting = false;
+        if (demoSubmitBtn) {
+          demoSubmitBtn.disabled = false;
+          demoSubmitBtn.innerHTML = demoSubmitLabel;
+        }
+      }
+    });
   }
 
   restoreAuthenticationSession();
@@ -3427,7 +3712,7 @@
   <div class="dev-panel-section">
     <span class="dev-section-title">Gameplay Spawns:</span>
     <div class="dev-btn-group">
-      <button type="button" class="dev-btn dev-btn-sm dev-btn-gold" id="dev-btn-spawn-mandi">Spawn Golden Mandi</button>
+      <button type="button" class="dev-btn dev-btn-sm dev-btn-gold" id="dev-btn-spawn-mandi">Spawn Golden Broast</button>
       <button type="button" class="dev-btn dev-btn-sm dev-btn-bomb" id="dev-btn-spawn-bomb">Spawn Bomb</button>
     </div>
   </div>

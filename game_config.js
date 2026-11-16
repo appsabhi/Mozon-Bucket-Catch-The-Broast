@@ -1,20 +1,21 @@
 /**
- * SOOFI MANDI — CATCH THE FEAST
+ * MOZON — BUCKET CATCH THE BROAST
  * Centralized Feature Toggles & Balanced Gameplay Configuration
  *
  * Scoring Rules:
  * - Normal Food: +1 pt (Without combo) | +2 pts (With combo x2)
- * - Golden Mandi: +3 pts (Without combo) | +6 pts (With combo x2)
+ * - Golden Broast: +3 pts (Without combo) | +6 pts (With combo x2)
  * - Bomb: -10 pts (Never multiplied, score floor at 0)
  *
  * Combo Rules:
  * - Consecutive successful catches 1–4: x1
  * - 5 or more consecutive successful catches: x2 (Max x2, no x3 or x4)
- * - Reset on missed food (normal or Golden Mandi) or caught bomb
+ * - Reset on missed food (normal or Golden Broast) or caught bomb
  * - Missing bomb does NOT reset combo
  *
  * Spawning Rules:
- * - Golden Mandi: exactly 1.5% probability (max 1 active)
+ * - Golden Broast: exactly 1.5% probability (max 1 active)
+ *   (internal keys stay goldenMandi / "golden-mandi" — shared with server score verification)
  * - Bomb Hazard: exactly 2.5% probability (max 1 active)
  *
  * Safe Rollback: Setting all GAME_FEATURES to false fully restores original game behavior.
@@ -35,7 +36,7 @@ const GAME_CONFIG = {
   goldenMandiPoints: 3,
   bombPoints: -10,
 
-  // Feature 1: Golden Mandi
+  // Feature 1: Golden Broast
   goldenMandiSpawnChance: 0.015, // Exactly 1.5% probability
 
   // Feature 2: Combo Catch (x2 Only)
@@ -53,7 +54,7 @@ const GAME_CONFIG = {
 /**
  * Universal Scoring Calculation Formula:
  * - Normal food: +1 (without combo) | +2 (with combo x2)
- * - Golden Mandi: +3 (without combo) | +6 (with combo x2)
+ * - Golden Broast: +3 (without combo) | +6 (with combo x2)
  * - Bomb: -10 (deduction is never multiplied, score floor at 0)
  *
  * @param {string} itemType - 'normal' | 'golden-mandi' | 'bomb'
@@ -94,7 +95,7 @@ function calculateCatchPoints(itemType, consecutiveCatches = 0, features = GAME_
     comboMultiplier = config.comboMultiplier || 2;
   }
 
-  // 3. Golden Mandi Catch: +3 base (+6 with combo x2)
+  // 3. Golden Broast Catch: +3 base (+6 with combo x2)
   if (itemType === "golden-mandi") {
     const base = features.goldenMandi ? (config.goldenMandiPoints || 3) : (config.normalFoodPoints || 1);
     const awarded = base * comboMultiplier;

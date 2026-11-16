@@ -1,5 +1,5 @@
 /**
- * Soofi Mandi — "Catch the Feast" Server & Private Analytics Backend
+ * MOZON — "Bucket Catch The Broast" Server & Private Analytics Backend
  * 
  * Features:
  * - Enterprise Database Layer: Neon PostgreSQL
@@ -106,6 +106,59 @@ const isProductionServer = (
 // server-side regardless of what the client sends.
 const DEV_TOOLS_ENABLED = !isProductionServer;
 
+// -----------------------------------------------------------------------------
+// Demo player entry (client demonstrations only)
+// Name-only sign-in without MSG91 / OTP / captcha. It exists ONLY on a local, non-production
+// server (set DEMO_PLAYER_ENTRY=0 to turn it off locally as well). On Vercel, Netlify or
+// NODE_ENV=production it is unavailable whatever the configuration, and demo sessions are refused.
+// Demo identities are kept apart from verified customers:
+//   - player ids start with "demo_"; sessions store the marker "demo" instead of a mobile number,
+//     so they never satisfy the verified-customer rules (admin customers list, staff claims);
+//   - a production server rejects demo session cookies (getPlayerSession) and hides demo players
+//     from the public leaderboard.
+// Everything after sign-in (game-session nonces, event-log score verification, rate limits,
+// duplicate protection, offer claims) is the unchanged production code path.
+// -----------------------------------------------------------------------------
+const DEMO_PLAYER_ENTRY_ENABLED = !isProductionServer && process.env.DEMO_PLAYER_ENTRY !== "0";
+const DEMO_SESSION_MARKER = "demo";
+const DEMO_PLAYER_ID_PREFIX = "demo_";
+const DEMO_SESSION_TTL_MS = 12 * 60 * 60 * 1000;
+const DEMO_ENTRY_LIMIT = 10; // demo sign-ins per client address per window
+const DEMO_ENTRY_WINDOW_MS = 10 * 60 * 1000;
+const demoEntryRateMap = new Map(); // client address -> recent demo sign-in timestamps
+
+function isDemoPlayerId(playerId) {
+  return typeof playerId === "string" && playerId.startsWith(DEMO_PLAYER_ID_PREFIX);
+}
+
+function allowDemoEntry(req) {
+  const key = (req.socket && req.socket.remoteAddress) || "unknown";
+  const now = Date.now();
+  const recent = (demoEntryRateMap.get(key) || []).filter((t) => now - t < DEMO_ENTRY_WINDOW_MS);
+  if (recent.length >= DEMO_ENTRY_LIMIT) {
+    demoEntryRateMap.set(key, recent);
+    return false;
+  }
+  recent.push(now);
+  demoEntryRateMap.set(key, recent);
+  return true;
+}
+
+// Public MSG91 widget settings for OTP sign-in come from the deployment environment. They are
+// never hard-coded in the page, so this project cannot ship another brand's widget credentials.
+function getOtpWidgetConfig() {
+  const widgetId = String(process.env.MSG91_WIDGET_ID || "").trim();
+  const tokenAuth = String(process.env.MSG91_TOKEN_AUTH || "").trim();
+  return widgetId && tokenAuth ? { widgetId, tokenAuth } : null;
+}
+
+// Tells the page which player sign-in to show; contains no secrets.
+function getPlayerEntryMode() {
+  return DEMO_PLAYER_ENTRY_ENABLED
+    ? { entryMode: "demo" }
+    : { entryMode: "otp", otp: getOtpWidgetConfig() };
+}
+
 // Player OTP sign-in verifies MSG91 access tokens server-side and cannot work without the Authkey.
 if (isProductionServer && !process.env.MSG91_AUTHKEY) {
   console.error("MSG91_AUTHKEY is not set: player OTP sign-in (POST /api/auth/msg91) will return HTTP 503 until it is configured and the site is redeployed.");
@@ -200,7 +253,7 @@ function formatIndianMobileDisplay(value) {
 }
 
 function isPlaceholderPlayerName(name) {
-  return !name || /^(Anonymous Feast Guest|MandiGuest(_\w*)?|Customer)$/.test(name);
+  return !name || /^(Anonymous Feast Guest|(?:Mandi|Mozon)Guest(_\w*)?|Customer)$/.test(name);
 }
 
 // Verified customers for Customer Offer Management ($1 = minimum qualifying score).
@@ -372,10 +425,15 @@ async function getPlayerSession(req, { throwOnDatabaseError = false } = {}) {
   const tokenHash = crypto.createHash("sha256").update(rawToken).digest("hex");
   const nowIso = new Date().toISOString();
   try {
-    return await db.queryOne(
+    const session = await db.queryOne(
       "SELECT player_id, mobile_number, expires_at FROM player_sessions WHERE session_token_hash = $1 AND revoked_at IS NULL AND expires_at > $2",
       [tokenHash, nowIso]
     );
+    // Demo sessions are valid only where demo entry is enabled (never on a production server).
+    if (session && (session.mobile_number === DEMO_SESSION_MARKER || isDemoPlayerId(session.player_id)) && !DEMO_PLAYER_ENTRY_ENABLED) {
+      return null;
+    }
+    return session;
   } catch (error) {
     if (throwOnDatabaseError) throw error;
     return null;
@@ -412,7 +470,8 @@ const MIME_TYPES = {
 // Public static allowlist: the game page, its scripts/styles, and image/font assets.
 // Source files, tests, scripts, data files, migrations and .env are never served.
 const PUBLIC_STATIC_FILES = new Set(["/index.html", "/app.js", "/styles.css", "/game_config.js", "/offers.js", "/popup.js"]);
-const PUBLIC_ASSET_PATTERN = /^\/assets\/[A-Za-z0-9_-]+(?:\.[A-Za-z0-9_-]+)*\.(?:png|jpe?g|svg|ico|woff2?)$/i;
+// Nested folders are allowed (e.g. /assets/images/broast/thigh.png); folder names cannot contain dots.
+const PUBLIC_ASSET_PATTERN = /^\/assets\/(?:[A-Za-z0-9_-]+\/)*[A-Za-z0-9_-]+(?:\.[A-Za-z0-9_-]+)*\.(?:png|jpe?g|svg|ico|woff2?)$/i;
 
 function isPublicStaticPath(requestPath) {
   if (typeof requestPath !== "string" || requestPath.includes("..") || requestPath.includes("\\")) return false;
@@ -450,8 +509,8 @@ function serveAdminDashboardHtml(res) {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Game Analytics Dashboard — Soofi Mandi</title>
-  <link rel="icon" type="image/png" href="/assets/logo.png">
+  <title>Game Analytics Dashboard — MOZON</title>
+  <link rel="icon" type="image/png" href="/assets/images/branding/mozon_fav.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -792,7 +851,7 @@ function serveAdminDashboardHtml(res) {
     <!-- Navigation Header -->
     <header class="header">
       <div class="header-left">
-        <img src="/assets/logo.png" alt="Soofi Mandi Logo" class="brand-logo">
+        <img src="/assets/images/branding/logo.png" alt="MOZON Logo" class="brand-logo">
         <div class="title-wrap">
           <h1>Game Dashboard</h1>
         </div>
@@ -887,7 +946,7 @@ function serveAdminDashboardHtml(res) {
 
     <!-- Branded Footer -->
     <footer class="admin-footer">
-      SOOFI MANDI · YEMENI CUISINE · MADE TO BE SHARED
+      MOZON · GROUP OF RESTAURANTS · BUCKET CATCH THE BROAST
     </footer>
   </div>
 
@@ -1392,7 +1451,7 @@ async function handleRequest(req, res) {
     }
     if (!session) {
       const staleCookie = getCookieValue(req, PLAYER_SESSION_COOKIE);
-      return sendJson(res, 200, { success: true, authenticated: false }, {
+      return sendJson(res, 200, { success: true, authenticated: false, ...getPlayerEntryMode() }, {
         "Cache-Control": "no-store",
         ...(staleCookie ? { "Set-Cookie": playerSessionCookie("", 0) } : {})
       });
@@ -1401,8 +1460,67 @@ async function handleRequest(req, res) {
       success: true,
       authenticated: true,
       playerId: session.player_id,
-      expiresAt: session.expires_at
+      expiresAt: session.expires_at,
+      demo: session.mobile_number === DEMO_SESSION_MARKER,
+      ...getPlayerEntryMode()
     }, { "Cache-Control": "no-store" });
+  }
+
+  // Demo player entry: name-only sign-in for local client demonstrations (see DEMO_PLAYER_ENTRY_ENABLED).
+  // Issues the same HttpOnly, hashed-token player session as OTP sign-in, under a new "demo_" identity.
+  if (pathname === "/api/auth/demo" && method === "POST") {
+    if (!DEMO_PLAYER_ENTRY_ENABLED) {
+      return sendJson(res, 404, { success: false, message: "Not found." });
+    }
+    if (!isSameOriginRequest(req)) {
+      return sendJson(res, 403, { success: false, message: "Request origin rejected." });
+    }
+    if (!allowDemoEntry(req)) {
+      return sendJson(res, 429, { success: false, message: "Too many attempts. Please wait a few minutes and try again." });
+    }
+    let body;
+    try {
+      body = await parseJsonBody(req);
+    } catch (_) {
+      return sendJson(res, 400, { success: false, message: "Invalid request." });
+    }
+    const displayName = sanitizeString(typeof body.displayName === "string" ? body.displayName.replace(/\s+/g, " ") : "", 20);
+    if (displayName.length < 2 || !/^[\p{L}\p{N}][\p{L}\p{N} .'_-]*$/u.test(displayName) || isPlaceholderPlayerName(displayName)) {
+      return sendJson(res, 400, { success: false, message: "Please enter a name of 2–20 letters or numbers." });
+    }
+
+    try {
+      // Signing in again on this device ends the previous session first.
+      const previousToken = getCookieValue(req, PLAYER_SESSION_COOKIE);
+      if (/^[A-Za-z0-9_-]{40,60}$/.test(previousToken)) {
+        const previousHash = crypto.createHash("sha256").update(previousToken).digest("hex");
+        await db.query("UPDATE player_sessions SET revoked_at = $1 WHERE session_token_hash = $2 AND revoked_at IS NULL", [new Date().toISOString(), previousHash]);
+      }
+
+      const playerId = DEMO_PLAYER_ID_PREFIX + crypto.randomUUID();
+      const rawSessionToken = crypto.randomBytes(32).toString("base64url");
+      const sessionTokenHash = crypto.createHash("sha256").update(rawSessionToken).digest("hex");
+      const now = new Date();
+      const expiresAt = new Date(now.getTime() + DEMO_SESSION_TTL_MS);
+      await db.transaction(async (tx) => {
+        await tx.query(`
+          INSERT INTO players (player_id, display_name, profile_name, highest_score, total_games, created_at, updated_at)
+          VALUES ($1, $2, $2, 0, 0, $3, $3)
+          ON CONFLICT (player_id) DO NOTHING
+        `, [playerId, displayName, now.toISOString()]);
+        await tx.query(
+          "INSERT INTO player_sessions (session_token_hash, player_id, mobile_number, created_at, expires_at, revoked_at) VALUES ($1, $2, $3, $4, $5, NULL)",
+          [sessionTokenHash, playerId, DEMO_SESSION_MARKER, now.toISOString(), expiresAt.toISOString()]
+        );
+      });
+      return sendJson(res, 200, { success: true, demo: true, playerId, displayName, expiresAt: expiresAt.toISOString() }, {
+        "Set-Cookie": playerSessionCookie(rawSessionToken, Math.floor(DEMO_SESSION_TTL_MS / 1000)),
+        "Cache-Control": "no-store"
+      });
+    } catch (err) {
+      console.error("Demo player session creation failed.");
+      return sendJson(res, 500, { success: false, message: "Couldn't start the demo. Please try again." });
+    }
   }
 
   if (pathname === "/api/auth/logout" && method === "POST") {
@@ -1463,9 +1581,11 @@ async function handleRequest(req, res) {
   // -------------------------------------------------------------------------
   if (pathname === "/api/leaderboard" && method === "GET") {
     try {
+      // Demo players appear only where demo entry is enabled (never on a production server).
       const rows = await db.query(`
         SELECT id, game_session_id, player_id, display_name, score, food_caught, missed_count, submitted_at
         FROM leaderboard
+        ${DEMO_PLAYER_ENTRY_ENABLED ? "" : "WHERE player_id NOT LIKE 'demo\\_%'"}
         ORDER BY score DESC, submitted_at ASC
         LIMIT 10
       `);
@@ -2521,7 +2641,7 @@ const server = http.createServer(handleRequest);
 if (require.main === module || (!process.env.NETLIFY && !process.env.VERCEL && !process.env.AWS_LAMBDA_FUNCTION_NAME && !process.env.SERVERLESS)) {
   dbReadyPromise.then(() => {
     server.listen(PORT, () => {
-      console.log(`Soofi Mandi "Catch the Feast" Server listening on http://localhost:${PORT}`);
+      console.log(`MOZON "Bucket Catch The Broast" Server listening on http://localhost:${PORT}`);
       console.log(`Admin Game Analytics Dashboard: http://localhost:${PORT}/admin/game-analytics`);
       console.log("Database backend: Neon PostgreSQL");
     });

@@ -1,12 +1,12 @@
-// Soofi Mandi — Demo Placeholder Offer Configuration
+// MOZON — Demo Placeholder Offer Configuration
 // Clean, easy to replace when the client confirms the actual offer.
 const SOOFI_MANDI_DEMO_OFFERS = [
   {
     id: "offer-main",
-    badge: "YOUR FEAST REWARD",
-    title: "Complimentary Yemeni Delicacy",
-    description: "Enjoy a special feast reward with your dine-in experience.",
-    brand: "SOOFI MANDI · YEMENI CUISINE",
+    badge: "YOUR BROAST REWARD",
+    title: "Complimentary MOZON Broast",
+    description: "Enjoy a special broast reward with your dine-in experience.",
+    brand: "MOZON · GROUP OF RESTAURANTS",
     instructions: "Show this screen to our staff to claim your reward."
   }
 ];

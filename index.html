@@ -3,15 +3,15 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="theme-color" content="#0A2A20">
-    <meta name="description" content="Catch the Feast at Soofi Mandi. Play now and climb the global Top 10 leaderboard!">
-    <title>Catch the Feast — Soofi Mandi</title>
-    <link rel="icon" type="image/png" href="assets/soofi_favicon.png">
-    <link rel="apple-touch-icon" href="assets/logo.png">
-    <link rel="preload" as="image" href="assets/logo.png">
+    <meta name="theme-color" content="#FFFDF8">
+    <meta name="description" content="MOZON – Bucket Catch The Broast. Play now and climb the global Top 10 leaderboard!">
+    <title>MOZON – Bucket Catch The Broast</title>
+    <link rel="icon" type="image/png" href="assets/images/branding/mozon_fav.png">
+    <link rel="apple-touch-icon" href="assets/images/branding/mozon_fav.png">
+    <link rel="preload" as="image" href="assets/images/branding/mozon_logo_wh.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
   </head>
   <body class="state-intro auth-pending">
@@ -19,7 +19,7 @@
     <div class="app-loader" id="app-loader" role="status" aria-live="polite">
       <div class="app-loader-inner">
         <div class="app-loader-logo-wrap">
-          <img src="assets/logo.png" alt="Soofi Mandi — Yemeni Cuisine" class="app-loader-logo" width="160" height="110" fetchpriority="high">
+          <img src="assets/images/branding/mozon_logo_wh.png" alt="MOZON — Group of Restaurants" class="app-loader-logo" width="160" height="61" fetchpriority="high">
         </div>
         <p class="app-loader-text">Getting things ready...</p>
         <div class="app-loader-track" aria-hidden="true"><span class="app-loader-bar"></span></div>
@@ -41,14 +41,31 @@
     </script>
     <section class="login-screen" id="login-screen" aria-labelledby="login-title">
       <div class="login-card">
-        <img src="assets/logo.png" alt="Soofi Mandi — Yemeni Cuisine" class="login-logo" width="160" height="110">
-        <h1 id="login-title">Welcome to Soofi Mandi!</h1>
-        <p class="login-supporting">Login to play Catch the Feast.</p>
-        <form id="login-phone-form" class="login-form" novalidate>
+        <img src="assets/images/branding/logo.png" alt="MOZON — Group of Restaurants" class="login-logo" width="160" height="51">
+        <span class="demo-badge" id="demo-badge" hidden>Demo</span>
+        <h1 id="login-title">Welcome to MOZON!</h1>
+        <p class="login-supporting" id="login-supporting">Getting things ready…</p>
+
+        <!-- Demo player entry: shown only when the server reports demo mode (local demonstrations) -->
+        <form id="demo-entry-form" class="login-form demo-entry-form" hidden novalidate>
+          <label for="demo-player-name">Your name</label>
+          <input id="demo-player-name" class="demo-name-input" type="text" maxlength="20" autocomplete="nickname" placeholder="e.g. Arjun" aria-describedby="demo-entry-error" required>
+          <p class="login-error" id="demo-entry-error" role="alert"></p>
+          <button type="submit" class="btn-action btn-primary login-submit demo-start-btn">
+            <span>START GAME</span>
+            <svg viewBox="0 0 20 20" width="16" height="16" fill="currentColor" aria-hidden="true">
+              <path d="M6.3 3.8a1.2 1.2 0 0 0-1.8 1v10.4a1.2 1.2 0 0 0 1.8 1l8.5-5.2a1.2 1.2 0 0 0 0-2L6.3 3.8z"/>
+            </svg>
+          </button>
+          <p class="demo-note">Demo mode — no sign-in code needed.</p>
+        </form>
+
+        <!-- OTP sign-in (production): shown only when the server reports OTP mode -->
+        <form id="login-phone-form" class="login-form" hidden novalidate>
           <!-- <label for="login-mobile">Indian mobile number</label>/ -->
           <div class="login-phone-control"><span aria-hidden="true">+91</span><input id="login-mobile" type="tel" inputmode="numeric" autocomplete="tel-national" maxlength="10" placeholder="98765 43210" aria-describedby="login-error" required></div>
           <p class="login-error" id="login-error" role="alert"></p>
-          <button type="submit" class="btn-action btn-gold login-submit">Send OTP</button>
+          <button type="submit" class="btn-action btn-primary login-submit">Send OTP</button>
         </form>
         <form id="login-otp-form" class="login-form" hidden novalidate>
           <p class="otp-description">Enter the 4-digit OTP sent to <strong id="otp-mobile-display"></strong>.</p>
@@ -59,7 +76,7 @@
             <input inputmode="numeric" maxlength="1" aria-label="OTP digit 4">
           </div>
           <p class="login-error" id="otp-error" role="alert"></p>
-          <button type="submit" class="btn-action btn-gold login-submit">Verify OTP</button>
+          <button type="submit" class="btn-action btn-primary login-submit">Verify OTP</button>
           <p class="otp-resend"><span id="otp-resend-label">Resend OTP in</span> <span id="otp-countdown">30</span>s <button type="button" class="login-text-btn" id="resend-otp-btn" disabled>Resend OTP</button></p>
           <button type="button" class="login-text-btn" id="edit-mobile-btn">Edit mobile number</button>
         </form>
@@ -71,10 +88,15 @@
     <!-- Pre-game countdown (shown after PLAY / PLAY AGAIN, before the round starts) -->
     <div class="game-countdown" id="game-countdown" role="status" aria-live="assertive" hidden>
       <div class="game-countdown-inner">
-        <p class="game-countdown-label">GET READY</p>
-        <div class="game-countdown-ring" aria-hidden="true"></div>
+        <p class="game-countdown-label">Get ready</p>
+        <div class="game-countdown-ring" aria-hidden="true">
+          <svg viewBox="0 0 120 120" focusable="false">
+            <circle class="game-countdown-track" cx="60" cy="60" r="56"/>
+            <circle class="game-countdown-arc" cx="60" cy="60" r="56" pathLength="100"/>
+          </svg>
+        </div>
         <span class="game-countdown-number" id="game-countdown-number">3</span>
-        <p class="game-countdown-hint">Drag the bucket to catch the feast</p>
+        <p class="game-countdown-hint" id="game-countdown-hint">Catch every piece of broast</p>
       </div>
     </div>
 
@@ -84,7 +106,7 @@
       <nav class="player-nav" id="player-nav" aria-label="Player navigation">
         <span class="player-nav-identity" title="Signed-in player">
           <span class="player-nav-label">Player:</span>
-          <span class="player-nav-name" id="player-nav-name">MandiGuest</span>
+          <span class="player-nav-name" id="player-nav-name">MozonGuest</span>
         </span>
         <span class="player-nav-actions">
           <a href="/" class="player-nav-link" id="player-nav-home">Home</a>
@@ -94,81 +116,139 @@
 
       <!-- Brand Header -->
       <header class="brand-header">
-        <img src="assets/logo.png" alt="Soofi Mandi — Yemeni Cuisine" class="brand-logo" width="140" height="96">
+        <img src="assets/images/branding/mozon_logo_wh.png" alt="MOZON — Group of Restaurants" class="brand-logo" width="140" height="53">
       </header>
 
-      <!-- Main Container (Catch the Feast Game & Container) -->
-      <section class="white-container-wrap" aria-label="Catch the Feast game container">
+      <!-- Main Container (Bucket Catch The Broast Game & Container) -->
+      <section class="white-container-wrap" aria-label="Bucket Catch The Broast game container">
         <div class="white-container is-intro" id="white-container">
           
-          <!-- VIEW 1: Game Introduction Screen -->
+          <!-- VIEW 1: Entry flow — Welcome panel, then How to play; START GAME runs the countdown -->
           <div class="game-view game-view-intro is-active" id="view-intro">
-            <!-- 1. Soofi Mandi Logo (Noticeably larger on mobile, preserved aspect ratio) -->
-            <div class="intro-logo-wrap">
-              <img src="assets/logo.png" alt="Soofi Mandi — Yemeni Cuisine" class="intro-logo" width="160" height="110">
-            </div>
 
-            <!-- 2. Small gold eyebrow label -->
-            <!-- <p class="intro-eyebrow">SOOFI MANDI SPECIAL</p> -->
-            
-            <!-- 3. Primary heading in cream -->
-           <div class="front-centre">
-            <h1 class="intro-heading" id="headline">A Special Treat</h1>
-            
-            <!-- 4. Main game title in gold -->
-            <h2 class="game-title">CATCH THE FEAST</h2>
-            
-            <!-- 5. Description in muted mint -->
-            <p class="game-subtitle">Every Catch Brings You Closer to a Treat!</p>
-
-            <!-- 6. Mandi Bucket with Falling Food Animation & Motion Lines -->
-            <div class="intro-bucket-wrap" id="intro-bucket-wrap">
-              <!-- Subtle gold radial glow behind bucket -->
-              <div class="intro-bucket-glow" aria-hidden="true"></div>
-
-              <!-- Decorative Falling Mandi Plate with Motion Lines -->
-              <div class="intro-falling-food-wrap" id="intro-falling-food-wrap" aria-hidden="true">
-                <svg class="intro-motion-lines" viewBox="0 0 40 48" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                  <path d="M12 6 L12 28" stroke="var(--gold-500)" stroke-width="2.5" stroke-linecap="round" opacity="0.7"/>
-                  <path d="M20 2 L20 36" stroke="var(--gold-300)" stroke-width="2.5" stroke-linecap="round" opacity="0.9"/>
-                  <path d="M28 8 L28 26" stroke="var(--gold-500)" stroke-width="2.5" stroke-linecap="round" opacity="0.7"/>
-                </svg>
-                <img src="assets/chicken-mandi.png" alt="" class="intro-falling-plate">
+            <!-- Panel A: Welcome -->
+            <section class="intro-panel intro-welcome" id="intro-welcome" aria-labelledby="headline">
+              <div class="intro-logo-wrap">
+                <img src="assets/images/branding/mozon_logo_wh.png" alt="MOZON — Group of Restaurants" class="intro-logo" width="160" height="61">
               </div>
 
-              <!-- Stationary Bucket: Rear layer (behind falling plate) -->
-              <div class="intro-bucket-rear" aria-hidden="true">
-                <img src="assets/mandi-bucket.png" alt="" class="intro-bucket-img intro-bucket-back">
+              <div class="front-centre">
+                <h1 class="intro-title" id="headline">
+                  <span class="intro-title-line">Bucket Catch</span>
+                  <span class="intro-title-line intro-title-accent">The Broast</span>
+                </h1>
+
+                <!-- Hero: the official bucket with real broast pieces around it; a drumstick drops in -->
+                <div class="intro-hero" aria-hidden="true">
+                  <div class="intro-hero-disc"></div>
+                  <img src="assets/images/broast/central-wing.png" alt="" class="intro-piece intro-piece--wing">
+                  <img src="assets/images/broast/chicken-piece.png" alt="" class="intro-piece intro-piece--piece">
+                  <img src="assets/images/broast/lower-left-wing.png" alt="" class="intro-piece intro-piece--lower-wing">
+                  <img src="assets/images/broast/thigh.png" alt="" class="intro-piece intro-piece--thigh">
+                  <div class="intro-bucket-wrap" id="intro-bucket-wrap">
+                    <div class="intro-falling-food-wrap" id="intro-falling-food-wrap">
+                      <img src="assets/images/broast/drumstick.png" alt="" class="intro-falling-plate">
+                    </div>
+                    <div class="intro-bucket-rear">
+                      <img src="assets/images/branding/mozon_bucket.png" alt="" class="intro-bucket-img intro-bucket-back">
+                    </div>
+                    <div class="intro-bucket-front">
+                      <img src="assets/images/branding/mozon_bucket.png" alt="" class="intro-bucket-img intro-bucket-fore">
+                    </div>
+                  </div>
+                </div>
+
+
+                <div class="intro-actions">
+                  <button type="button" class="btn-action btn-primary play-now-btn" id="play-now-btn" aria-controls="intro-howto">
+                    <span>PLAY NOW</span>
+                    <svg viewBox="0 0 20 20" width="16" height="16" fill="currentColor" aria-hidden="true">
+                      <path d="M6.3 3.8a1.2 1.2 0 0 0-1.8 1v10.4a1.2 1.2 0 0 0 1.8 1l8.5-5.2a1.2 1.2 0 0 0 0-2L6.3 3.8z"/>
+                    </svg>
+                  </button>
+
+                </div>
+              </div>
+            </section>
+
+            <!-- Panel B: How to play -->
+            <section class="intro-panel intro-howto" id="intro-howto" aria-labelledby="howto-title" hidden>
+              <header class="howto-head">
+                <p class="howto-eyebrow">Bucket Catch The Broast</p>
+                <h2 class="howto-title" id="howto-title">How to play</h2>
+              </header>
+
+              <ol class="howto-steps">
+                <li class="howto-step">
+                  <span class="howto-step-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 7 3 12l5 5M16 7l5 5-5 5M3 12h18"/></svg>
+                  </span>
+                  <div class="howto-step-text">
+                    <h3>Move the bucket</h3>
+                    <p>Slide your MOZON bucket left and right.</p>
+                  </div>
+                </li>
+                <li class="howto-step">
+                  <span class="howto-step-icon howto-step-icon--image" aria-hidden="true">
+                    <img src="assets/images/broast/drumstick.png" alt="">
+                  </span>
+                  <div class="howto-step-text">
+                    <h3>Catch the broast</h3>
+                    <p>Catch the falling broasted chicken in the bucket.</p>
+                  </div>
+                </li>
+                <li class="howto-step">
+                  <span class="howto-step-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="m9 9 6 6M15 9l-6 6"/></svg>
+                  </span>
+                  <div class="howto-step-text">
+                    <h3>Avoid missing pieces</h3>
+                    <p><span data-howto="miss-limit">5</span> missed pieces end the round.</p>
+                  </div>
+                </li>
+                <li class="howto-step">
+                  <span class="howto-step-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+                  </span>
+                  <div class="howto-step-text">
+                    <h3>Earn points</h3>
+                    <p>Every catch scores. Reach <span data-howto="reward-score">100</span> to unlock a reward.</p>
+                  </div>
+                </li>
+              </ol>
+
+              <div class="howto-bonus">
+                <span class="howto-bonus-item" data-feature="goldenMandi"><span class="howto-chip howto-chip--golden">Golden Broast</span> +<span data-howto="golden-points">3</span> points</span>
+                <span class="howto-bonus-item" data-feature="bomb"><span class="howto-chip howto-chip--bomb">Bomb</span> <span data-howto="bomb-points">−10</span> points</span>
               </div>
 
-              <!-- Stationary Bucket: Front layer (in front of falling plate) -->
-              <div class="intro-bucket-front" aria-hidden="true">
-                <img src="assets/mandi-bucket.png" alt="Mandi Bucket" class="intro-bucket-img intro-bucket-fore">
+              <div class="howto-controls">
+                <div class="howto-control" data-device="desktop">
+                  <p class="howto-control-label">Desktop</p>
+                  <div class="howto-keys" aria-label="Left and right arrow keys, or A and D">
+                    <kbd>←</kbd><kbd>→</kbd><span class="howto-or">or</span><kbd>A</kbd><kbd>D</kbd>
+                  </div>
+                  <p class="howto-control-hint">Hold to move, or follow with the mouse</p>
+                </div>
+                <div class="howto-control" data-device="touch">
+                  <p class="howto-control-label">Mobile</p>
+                  <div class="howto-touch" aria-hidden="true">
+                    <svg viewBox="0 0 64 32" width="64" height="32" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10 16h44M16 10l-6 6 6 6M48 10l6 6-6 6"/><circle class="howto-touch-dot" cx="32" cy="16" r="6" fill="currentColor" stroke="none"/></svg>
+                  </div>
+                  <p class="howto-control-hint">Drag anywhere in the arena</p>
+                </div>
               </div>
-            </div>
 
-            <!-- 7. Action Buttons (Start Game & Global Top 10 Leaderboard) -->
-            <div class="intro-actions">
-              <button type="button" class="btn-action btn-gold start-game-btn" id="start-game-btn" aria-label="Start Catch the Feast game">
-                <span>START GAME</span>
-                <svg viewBox="0 0 20 20" width="16" height="16" fill="currentColor" aria-hidden="true">
-                  <path d="M6.3 3.8a1.2 1.2 0 0 0-1.8 1v10.4a1.2 1.2 0 0 0 1.8 1l8.5-5.2a1.2 1.2 0 0 0 0-2L6.3 3.8z"/>
-                </svg>
-              </button>
-
-              <!-- <button type="button" class="btn-action btn-secondary-pill" id="open-leaderboard-btn" aria-label="View Top 10 Leaderboard">
-                <span class="btn-icon" aria-hidden="true">🏆</span>
-                <span>TOP 10 LEADERBOARD</span>
-              </button> -->
-
-              <!-- Anonymous player identity chip -->
-              <div class="intro-player-chip" id="intro-player-chip" title="Anonymous Player Identity">
-                <span class="player-chip-label">Player:</span>
-                <span class="player-chip-name" id="player-chip-display-name">MandiGuest</span>
-                <button type="button" class="player-chip-edit-btn" id="player-chip-edit-btn" aria-label="Edit display name" title="Edit your display name">✎</button>
+              <div class="howto-actions">
+                <button type="button" class="btn-action btn-primary start-game-btn" id="start-game-btn" aria-label="Start Bucket Catch The Broast game">
+                  <span>START GAME</span>
+                  <svg viewBox="0 0 20 20" width="16" height="16" fill="currentColor" aria-hidden="true">
+                    <path d="M6.3 3.8a1.2 1.2 0 0 0-1.8 1v10.4a1.2 1.2 0 0 0 1.8 1l8.5-5.2a1.2 1.2 0 0 0 0-2L6.3 3.8z"/>
+                  </svg>
+                </button>
+                <button type="button" class="howto-back-btn" id="howto-back-btn">Back</button>
               </div>
-            </div>
-            </div>
+            </section>
           </div>
 
           <!-- VIEW 2: Active Gameplay Screen -->
@@ -180,11 +260,11 @@
                 <span class="hud-value" id="game-score">0</span>
               </div>
               <div class="hud-center-title">
-                <span class="hud-title-eyebrow">SOOFI MANDI</span>
-                <span class="hud-title-main">CATCH THE FEAST</span>
+                <span class="hud-title-eyebrow">MOZON · BUCKET</span>
+                <span class="hud-title-main">CATCH THE BROAST</span>
               </div>
               <div class="hud-right-group">
-                <div class="hud-pill hud-misses" id="hud-misses" aria-label="Missed food items">
+                <div class="hud-pill hud-misses" id="hud-misses" aria-label="Missed pieces">
                   <span class="hud-label">MISSES:</span>
                   <span class="hud-value" id="game-misses">0/5</span>
                 </div>
@@ -214,16 +294,19 @@
 
               <!-- Rear Bucket Layer (Back rim & interior cavity, z-index: 2, BEHIND food) -->
               <div class="bucket-layer bucket-rear-layer" id="bucket-rear" aria-hidden="true">
-                <img src="assets/mandi-bucket.png" alt="" class="bucket-img">
+                <img src="assets/images/branding/mozon_bucket.png" alt="" class="bucket-img">
               </div>
 
               <!-- Falling Food Items Layer (z-index: 4, drops into open interior) -->
               <div class="falling-items-layer" id="falling-items-layer"></div>
 
               <!-- Front Bucket Layer (Front rim & body, z-index: 6, IN FRONT OF food) -->
-              <div class="bucket-layer bucket-front-layer" id="bucket-front" role="slider" aria-label="Mandi Bucket" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50" tabindex="0">
-                <img src="assets/mandi-bucket.png" alt="Mandi Bucket" class="bucket-img bucket-front-img">
+              <div class="bucket-layer bucket-front-layer" id="bucket-front" role="slider" aria-label="MOZON Bucket" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50" tabindex="0">
+                <img src="assets/images/branding/mozon_bucket.png" alt="MOZON Bucket" class="bucket-img bucket-front-img">
               </div>
+
+              <!-- Pieces that miss the opening fall past in front of the bucket (z-index: 7) -->
+              <div class="falling-items-layer falling-items-front" id="falling-items-front" aria-hidden="true"></div>
 
               <!-- Subtle Drag Guide -->
               <div class="bucket-drag-indicator" id="bucket-drag-indicator" aria-hidden="true">
@@ -235,13 +318,11 @@
             <div class="game-pause-overlay" id="game-pause-overlay" style="display: none;" aria-hidden="true" role="dialog" aria-modal="true" aria-label="Game Paused">
               <div class="pause-card">
                 <div class="pause-kicker-badge" aria-hidden="true">
-                  <span class="pause-kicker-star">✦</span>
                   <span class="pause-kicker-text">GAME PAUSED</span>
-                  <span class="pause-kicker-star">✦</span>
                 </div>
                 <div class="pause-icon-circle" aria-hidden="true">❚❚</div>
                 <h2 class="pause-title">PAUSED</h2>
-                <p class="pause-subtitle">Take a breather! Your feast is waiting.</p>
+                <p class="pause-subtitle">Take a breather! Your broast is waiting.</p>
                 <div class="pause-stats-grid">
                   <div class="pause-stat-chip">
                     <span class="pause-stat-label">SCORE</span>
@@ -256,7 +337,7 @@
                     <span class="pause-stat-value" id="pause-stat-misses">0/5</span>
                   </div>
                 </div>
-                <button type="button" class="btn-action btn-gold resume-game-btn" id="resume-game-btn" aria-label="Resume Game">
+                <button type="button" class="btn-action btn-primary resume-game-btn" id="resume-game-btn" aria-label="Resume Game">
                   <span class="resume-icon" aria-hidden="true">▶</span>
                   <span>RESUME</span>
                 </button>
@@ -266,17 +347,17 @@
 
           <!-- VIEW 3: Results Interstitial Screen -->
           <div class="game-view game-view-results" id="view-results" aria-hidden="true">
-            <div class="results-badge" aria-hidden="true">✦</div>
+            <div class="results-badge" aria-hidden="true"></div>
             <p class="game-kicker results-kicker">GAME OVER</p>
             <h2 class="game-title results-title">YOUR SCORE: <span id="interstitial-score-val">0</span></h2>
-            <p class="game-subtitle results-subtitle" id="interstitial-score-desc">You caught 0 food items!</p>
+            <p class="game-subtitle results-subtitle" id="interstitial-score-desc">You caught 0 pieces of broast!</p>
           </div>
 
           <!-- VIEW 4: Result / Game Over Screen with Score & Play Again -->
           <article class="reward-card" id="reward-card" aria-live="polite" aria-hidden="true">
             <!-- Brand Logo at Top of Result Screen (Matching Intro screen positioning) -->
             <div class="reward-logo-wrap">
-              <img src="assets/logo.png" alt="Soofi Mandi — Yemeni Cuisine" class="reward-logo" width="160" height="110">
+              <img src="assets/images/branding/mozon_logo_wh.png" alt="MOZON — Group of Restaurants" class="reward-logo" width="160" height="61">
             </div>
 
             <!-- Centered Scoreboard & Actions Content Directly on Background -->
@@ -284,18 +365,16 @@
               <!-- 1. Result Screen Header: Displays GAME OVER and Player's Actual Final Score -->
               <div class="reward-result-header" id="reward-result-header">
                 <div class="reward-kicker-badge" id="reward-kicker-badge">
-                  <span class="kicker-star kicker-star-left" aria-hidden="true">✦</span>
                   <h2 class="reward-kicker" id="reward-kicker">GAME OVER</h2>
-                  <span class="kicker-star kicker-star-right" aria-hidden="true">✦</span>
                 </div>
                 <div class="reward-score-card" id="reward-score-card">
-                  <span class="reward-score-label">FEAST ROUND SCORE</span>
+                  <span class="reward-score-label">BROAST ROUND SCORE</span>
                   <div class="reward-score-val-wrap">
                     <span class="reward-score-number" id="reward-score-number">0</span>
                   </div>
                   <!-- Round detail and divider (shown only on the score < 100 screen) -->
                   <p class="reward-score-detail" id="reward-score-detail"></p>
-                  <div class="reward-divider" aria-hidden="true"><span>✦</span></div>
+                  <div class="reward-divider" aria-hidden="true"><span></span></div>
                   <p class="reward-score-summary" id="reward-score-summary">Reach 100 points to unlock your reward!</p>
                 </div>
               </div>
@@ -304,7 +383,7 @@
               <div class="score-verify-status" id="score-verify-status" role="status" aria-live="polite">
                 <span class="score-verify-spinner" id="score-verify-spinner" aria-hidden="true"></span>
                 <p class="score-verify-text" id="score-verify-text">Verifying your score…</p>
-                <button type="button" class="btn-action btn-gold score-verify-retry" id="score-verify-retry" hidden>
+                <button type="button" class="btn-action btn-primary score-verify-retry" id="score-verify-retry" hidden>
                   <span>RETRY VERIFICATION</span>
                 </button>
               </div>
@@ -326,10 +405,8 @@
                 <p class="unlock-congrats-text" id="unlock-congrats-text">
                   Congratulations! You've unlocked a reward.
                 </p>
-                <button type="button" class="btn-action btn-gold unlock-offer-btn" id="unlock-offer-btn" aria-label="Unlock My Offer">
-                  <span class="unlock-btn-star" aria-hidden="true">✦</span>
+                <button type="button" class="btn-action btn-primary unlock-offer-btn" id="unlock-offer-btn" aria-label="Unlock My Offer">
                   <span>UNLOCK MY OFFER</span>
-                  <span class="unlock-btn-star" aria-hidden="true">✦</span>
                 </button>
                 <div class="claim-alert-error" id="unlock-offer-error" style="display: none;" role="alert"></div>
               </div>
@@ -344,9 +421,9 @@
 
                 <!-- Reward Details Section -->
                 <div class="offer-details-section">
-                  <div class="offer-reward-badge" id="offer-badge" style="display: none !important;" aria-hidden="true">YOUR FEAST REWARD</div>
-                  <h3 class="reward-offer-title" id="offer-title">Complimentary Yemeni Delicacy</h3>
-                  <p class="reward-offer-desc" id="offer-description">Enjoy a special feast reward with your dine-in experience.</p>
+                  <div class="offer-reward-badge" id="offer-badge" style="display: none !important;" aria-hidden="true">YOUR BROAST REWARD</div>
+                  <h3 class="reward-offer-title" id="offer-title">Complimentary MOZON Broast</h3>
+                  <p class="reward-offer-desc" id="offer-description">Enjoy a special broast reward with your dine-in experience.</p>
                 </div>
 
                 <!-- Hidden Claim Code (Preserved for backend tracking/scripts, completely hidden from UI) -->
@@ -358,29 +435,20 @@
                 <div class="offer-redeem-section" role="note" aria-label="How to redeem your reward">
                   <div class="offer-redeem-icon" aria-hidden="true">
                     <svg viewBox="0 0 48 48" width="30" height="30" focusable="false">
-                      <defs>
-                        <linearGradient id="offerCameraGold" x1="0" y1="0" x2="1" y2="1">
-                          <stop offset="0%" stop-color="#FFF3C4"/>
-                          <stop offset="45%" stop-color="#FFD24D"/>
-                          <stop offset="100%" stop-color="#D99E00"/>
-                        </linearGradient>
-                      </defs>
-                      <path fill="url(#offerCameraGold)" d="M17.6 8.5a3 3 0 0 0-2.6 1.5l-1.7 3H9a5 5 0 0 0-5 5V35a5 5 0 0 0 5 5h30a5 5 0 0 0 5-5V18a5 5 0 0 0-5-5h-4.3l-1.7-3a3 3 0 0 0-2.6-1.5H17.6zM24 17.5a8.75 8.75 0 1 1 0 17.5 8.75 8.75 0 0 1 0-17.5zm0 4a4.75 4.75 0 1 0 0 9.5 4.75 4.75 0 0 0 0-9.5zM37.5 17a1.75 1.75 0 1 1 0 3.5 1.75 1.75 0 0 1 0-3.5z"/>
+                      <path fill="currentColor" d="M17.6 8.5a3 3 0 0 0-2.6 1.5l-1.7 3H9a5 5 0 0 0-5 5V35a5 5 0 0 0 5 5h30a5 5 0 0 0 5-5V18a5 5 0 0 0-5-5h-4.3l-1.7-3a3 3 0 0 0-2.6-1.5H17.6zM24 17.5a8.75 8.75 0 1 1 0 17.5 8.75 8.75 0 0 1 0-17.5zm0 4a4.75 4.75 0 1 0 0 9.5 4.75 4.75 0 0 0 0-9.5zM37.5 17a1.75 1.75 0 1 1 0 3.5 1.75 1.75 0 0 1 0-3.5z"/>
                     </svg>
                   </div>
                   <h4 class="offer-redeem-heading">DON'T MISS YOUR REWARD!</h4>
                   <p class="offer-instructions-text" id="offer-instructions-text">Take a screenshot of this offer and show it to our staff to redeem your reward.</p>
                   <div class="offer-redeem-footer">
-                    <span class="offer-redeem-footer-star" aria-hidden="true">✦</span>
                     <span>SHOW THIS OFFER TO OUR STAFF</span>
-                    <span class="offer-redeem-footer-star" aria-hidden="true">✦</span>
                   </div>
                 </div>
               </div>
 
               <!-- 3. Action Buttons: Play Again & Leaderboard -->
               <div class="reward-actions">
-                <button type="button" class="btn-action btn-gold play-again-btn" id="play-again-btn" aria-label="Play Catch the Feast again">
+                <button type="button" class="btn-action btn-primary play-again-btn" id="play-again-btn" aria-label="Play Bucket Catch The Broast again">
                   <svg viewBox="0 0 20 20" width="15" height="15" fill="currentColor" aria-hidden="true" class="play-again-icon">
                     <path d="M10 3a7 7 0 1 0 6.95 6h-1.52A5.5 5.5 0 1 1 10 4.5c1.52 0 2.9.62 3.89 1.61L11.5 8.5H17V3l-2.05 2.05A6.98 6.98 0 0 0 10 3z"/>
                   </svg>
@@ -401,7 +469,7 @@
 
             <!-- 4. Understated Brand Section (hidden on results screen as footer-note is at screen bottom) -->
             <div class="reward-brand-section" style="display: none;">
-              <span class="reward-brand-text">SOOFI MANDI <span class="reward-brand-dot">·</span> YEMENI CUISINE <span class="reward-brand-dot">·</span> MADE TO BE SHARED</span>
+              <span class="reward-brand-text">MOZON <span class="reward-brand-dot">·</span> GROUP OF RESTAURANTS <span class="reward-brand-dot">·</span> BUCKET CATCH THE BROAST</span>
             </div>
           </article>
         </div>
@@ -419,11 +487,11 @@
 
       <!-- Footer Note -->
       <footer class="footer-note">
-        <span class="footer-item">SOOFI MANDI</span>
+        <span class="footer-item">MOZON</span>
         <span class="footer-dot" aria-hidden="true">·</span>
-        <span class="footer-item">YEMENI CUISINE</span>
+        <span class="footer-item">GROUP OF RESTAURANTS</span>
         <span class="footer-dot" aria-hidden="true">·</span>
-        <span class="footer-item">MADE TO BE SHARED</span>
+        <span class="footer-item">BUCKET CATCH THE BROAST</span>
       </footer>
 
       <!-- Top 10 Leaderboard Modal Dialog -->
@@ -431,8 +499,8 @@
         <div class="modal-card">
           <div class="modal-header">
             <div class="modal-title-wrap">
-              <span class="modal-badge">✦ GLOBAL RANKINGS ✦</span>
-              <h2 class="modal-title" id="leaderboard-modal-title">Top 10 Feasters</h2>
+              <span class="modal-badge">GLOBAL RANKINGS</span>
+              <h2 class="modal-title" id="leaderboard-modal-title">Top 10 Broast Catchers</h2>
               <!-- <p class="modal-subtitle">Deterministic tie-breaking: Highest score first, then earliest submission.</p> -->
             </div>
             <button type="button" class="modal-close-btn" id="close-leaderboard-btn" aria-label="Close Leaderboard Modal">✕</button>
@@ -471,7 +539,7 @@
           </div>
 
           <div class="modal-footer">
-            <button type="button" class="btn-action btn-gold modal-done-btn" id="done-leaderboard-btn">
+            <button type="button" class="btn-action btn-primary modal-done-btn" id="done-leaderboard-btn">
               <span>CLOSE</span>
             </button>
           </div>
@@ -483,7 +551,7 @@
         <div class="modal-card claim-modal-card">
           <div class="modal-header">
             <div class="modal-title-wrap">
-              <span class="modal-badge">✦ CLAIM YOUR TREAT ✦</span>
+              <span class="modal-badge">CLAIM YOUR TREAT</span>
               <h2 class="modal-title" id="claim-modal-title">Customer Details</h2>
               <p class="modal-subtitle">Enter your details to claim and personalize your exclusive offer.</p>
             </div>
@@ -494,7 +562,7 @@
             <!-- Full Name (Required) -->
             <div class="claim-field-group">
               <label for="claim-name" class="claim-label">Full Name <span class="claim-req">*</span></label>
-              <input type="text" id="claim-name" name="fullName" class="claim-input" placeholder="e.g. Tariq Al-Mansoor" required minlength="2" maxlength="64" autocomplete="name">
+              <input type="text" id="claim-name" name="fullName" class="claim-input" placeholder="Enter your full name" required minlength="2" maxlength="64" autocomplete="name">
               <span class="claim-field-error" id="claim-name-error" aria-live="polite"></span>
             </div>
 
@@ -511,7 +579,7 @@
 
             <!-- Form Actions -->
             <div class="claim-form-actions">
-              <button type="submit" class="btn-action btn-gold claim-submit-btn" id="claim-submit-btn">
+              <button type="submit" class="btn-action btn-primary claim-submit-btn" id="claim-submit-btn">
                 <span class="claim-spinner" id="claim-spinner" style="display: none;" aria-hidden="true"></span>
                 <span id="claim-submit-text">CONTINUE</span>
               </button>
@@ -523,22 +591,7 @@
 
     <script src="game_config.js"></script>
     <script src="offers.js"></script>
-    <script>
-      window.SOOFI_MANDI_MSG91_CONFIG = {
-        widgetId: "366b6c693536353637343731",
-        tokenAuth: "589375TAOnKkVue6af5938cP1",
-        exposeMethods: true,
-        success: function () {},
-        failure: function () {}
-      };
-      window.SOOFI_MANDI_MSG91_SDK_ERROR = false;
-    </script>
-    <script
-      async
-      src="https://verify.msg91.com/otp-provider.js"
-      onload="try { window.initSendOTP(window.SOOFI_MANDI_MSG91_CONFIG); } catch (_) { window.SOOFI_MANDI_MSG91_SDK_ERROR = true; }"
-      onerror="window.SOOFI_MANDI_MSG91_SDK_ERROR = true;">
-    </script>
+    <!-- The MSG91 OTP widget is loaded by app.js only in OTP sign-in mode, with settings from the server -->
     <script src="popup.js"></script>
     <script src="app.js"></script>
   </body>

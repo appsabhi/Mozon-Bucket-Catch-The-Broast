@@ -1,5 +1,5 @@
 /**
- * Netlify Serverless Function: Soofi Mandi API Gateway
+ * Netlify Serverless Function: MOZON API Gateway
  *
  * Routes incoming /api/* and admin requests on Netlify to the existing server request handler.
  * Reuses server.js and db.js without code duplication or database migrations.
