@@ -300,6 +300,10 @@
               <!-- Falling Food Items Layer (z-index: 4, drops into open interior) -->
               <div class="falling-items-layer" id="falling-items-layer"></div>
 
+              <!-- Catch zone guide (z-index: 3, under falling pieces). app.js sets its position from the same
+                   geometry as the collision check, so it marks exactly where a piece can be caught. -->
+              <div class="catch-zone" id="catch-zone" aria-hidden="true"><span class="catch-zone-glow"></span><span class="catch-zone-line"></span></div>
+
               <!-- Front Bucket Layer (Front rim & body, z-index: 6, IN FRONT OF food) -->
               <div class="bucket-layer bucket-front-layer" id="bucket-front" role="slider" aria-label="MOZON Bucket" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50" tabindex="0">
                 <img src="assets/images/branding/mozon_bucket.png" alt="MOZON Bucket" class="bucket-img bucket-front-img">

@@ -1810,10 +1810,54 @@ body.state-results .footer-note {
   pointer-events: none;
 }
 
+/* Missed piece: a quiet, short fade so the miss reads without distracting from play */
 .falling-food-item.is-missed {
-  opacity: 0.35;
-  filter: grayscale(0.6);
-  transition: opacity 0.2s ease;
+  opacity: 0.45;
+  filter: grayscale(0.5);
+  transition: opacity 0.35s ease, filter 0.35s ease;
+}
+
+/* Catch zone: a thin electric-yellow guide across the bucket opening at the real catching height.
+   It sits under the falling pieces and in front of the bucket's back wall, so it never covers the
+   chicken or the bucket's front rim. */
+.catch-zone {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 0;
+  height: 0;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.catch-zone-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -1.5px;
+  height: 3px;
+  border-radius: 3px;
+  background: linear-gradient(90deg, rgba(246, 237, 8, 0), rgba(246, 237, 8, 0.85) 18%, rgba(246, 237, 8, 0.85) 82%, rgba(246, 237, 8, 0));
+}
+
+.catch-zone-glow {
+  position: absolute;
+  left: -8%;
+  right: -8%;
+  top: -8px;
+  height: 16px;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(246, 237, 8, 0.26), rgba(246, 237, 8, 0));
+  opacity: 0.8;
+}
+
+.catch-zone.is-caught .catch-zone-glow {
+  animation: catch-zone-flash 0.45s ease-out;
+}
+
+@keyframes catch-zone-flash {
+  0% { opacity: 1; transform: scaleX(1.12); }
+  100% { opacity: 0.8; transform: scaleX(1); }
 }
 
 /* =========================================================================

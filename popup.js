@@ -97,7 +97,7 @@
   function show(options) {
     const opts = Object.assign({ type: "error", dismissible: true }, options || {});
     const key = keyOf(opts);
-    if (current && current.key === key) return current.promise;
+    if (current && current.key === key && !current.closing) return current.promise; // a popup that is closing does not block a new one
     const queued = queue.find((item) => item.key === key);
     if (queued) return queued.promise;
     let resolveFn;
@@ -193,6 +193,7 @@
     function close(value, onClick) {
       if (closed) return;
       closed = true;
+      entry.closing = true;
       document.removeEventListener("keydown", onKey, true);
       backdrop.classList.remove("is-open");
       setTimeout(() => {

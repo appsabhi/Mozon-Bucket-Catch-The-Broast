@@ -1255,6 +1255,7 @@
   let sinkingItems = []; // Caught pieces animating down into the bucket (already scored and out of play)
   let lastFoodTypeId = null;
   const fallingItemsFront = document.getElementById("falling-items-front");
+  const catchZoneEl = document.getElementById("catch-zone");
 
   function updatePlayAreaRect() {
     if (gamePlayArea) {
@@ -1354,6 +1355,29 @@
     }
   }
 
+  /**
+   * The catch zone, from the measured bucket sprite. A piece can be caught only when its centre crosses
+   * rimY while its centre lies within openingHalf of the bucket centre. Both the collision check and the
+   * on-screen guide read this function, so the guide can never differ from the real collision area.
+   */
+  function getCatchGeometry(areaHeight, metrics) {
+    const bucketTop = areaHeight - getBucketBottomOffset(metrics) - metrics.bucketHeight;
+    return {
+      rimY: bucketTop + BUCKET_SPRITE.rimY * metrics.bucketHeight,
+      openingHalf: BUCKET_SPRITE.openingHalf * metrics.bucketWidth
+    };
+  }
+
+  // Position the guide at the current bucket x (called on every bucket render, so it follows movement)
+  function updateCatchZone() {
+    if (!catchZoneEl || !gamePlayArea) return;
+    const areaHeight = gamePlayArea.clientHeight || (cachedPlayAreaRect && cachedPlayAreaRect.height) || 500;
+    const g = getCatchGeometry(areaHeight, getPlayfieldMetrics());
+    catchZoneEl.style.left = `${(bucketX - g.openingHalf).toFixed(1)}px`;
+    catchZoneEl.style.width = `${(g.openingHalf * 2).toFixed(1)}px`;
+    catchZoneEl.style.top = `${g.rimY.toFixed(1)}px`;
+  }
+
   // Bucket box offset so the visible base rests just above the arena floor (the sprite has transparent padding)
   function getBucketBottomOffset(metrics) {
     return Math.round(8 - (1 - BUCKET_SPRITE.baseY) * metrics.bucketHeight);
@@ -1378,6 +1402,7 @@
 
   // Draw both bucket layers at bucketX with a tilt that follows the movement (transform only, no layout)
   function renderBucket() {
+    updateCatchZone();
     const tilt = Math.max(-7, Math.min(7, bucketVX / 90));
     [bucketRear, bucketFront].forEach((b) => {
       if (!b) return;
@@ -1707,6 +1732,13 @@
     const catchCenterX = bucketX;
     const catchCenterY = rimY - 14;
 
+    // Catch zone flash (the guide is the same shape as the collision area)
+    if (catchZoneEl) {
+      catchZoneEl.classList.remove("is-caught");
+      void catchZoneEl.offsetWidth;
+      catchZoneEl.classList.add("is-caught");
+    }
+
     // Bucket dip feedback
     [bucketRear, bucketFront].forEach((b) => {
       if (!b) return;
@@ -1866,10 +1898,8 @@
         : GAME_CONFIG.minSpawnInterval + Math.random() * (GAME_CONFIG.maxSpawnInterval - GAME_CONFIG.minSpawnInterval);
     }
 
-    // Rim line of the bucket opening, from the measured sprite geometry
-    const bucketTop = areaHeight - getBucketBottomOffset(metrics) - metrics.bucketHeight;
-    const rimY = bucketTop + BUCKET_SPRITE.rimY * metrics.bucketHeight;
-    const openingHalf = BUCKET_SPRITE.openingHalf * metrics.bucketWidth;
+    // Rim line and opening width of the catch zone (shared with the on-screen guide)
+    const { rimY, openingHalf } = getCatchGeometry(areaHeight, metrics);
 
     for (let i = fallingItems.length - 1; i >= 0; i--) {
       const item = fallingItems[i];
@@ -1888,6 +1918,7 @@
         }
         // Missed the opening: it can no longer be caught and falls past in front of the bucket
         item.passedRim = true;
+        if (!item.isBomb) item.el.classList.add("is-missed");
         if (fallingItemsFront) fallingItemsFront.appendChild(item.el);
       }
 

@@ -119,7 +119,7 @@ const DEV_TOOLS_ENABLED = !isProductionServer;
 // Everything after sign-in (game-session nonces, event-log score verification, rate limits,
 // duplicate protection, offer claims) is the unchanged production code path.
 // -----------------------------------------------------------------------------
-const DEMO_PLAYER_ENTRY_ENABLED = !isProductionServer && process.env.DEMO_PLAYER_ENTRY !== "0";
+const DEMO_PLAYER_ENTRY_ENABLED = !isProductionServer && process.env.DEMO_PLAYER_ENTRY === "1";
 const DEMO_SESSION_MARKER = "demo";
 const DEMO_PLAYER_ID_PREFIX = "demo_";
 const DEMO_SESSION_TTL_MS = 12 * 60 * 60 * 1000;
@@ -129,6 +129,47 @@ const demoEntryRateMap = new Map(); // client address -> recent demo sign-in tim
 
 function isDemoPlayerId(playerId) {
   return typeof playerId === "string" && playerId.startsWith(DEMO_PLAYER_ID_PREFIX);
+}
+
+// Sliding-window attempt limiter (per process: a backstop; an edge/WAF rule is the primary limit)
+const OTP_ATTEMPT_LIMIT = 10;
+const OTP_ATTEMPT_WINDOW_MS = 10 * 60 * 1000;
+const otpAttemptMap = new Map();
+function clientKey(req) {
+  return (req.socket && req.socket.remoteAddress) || "unknown";
+}
+function allowAttempt(map, key, limit, windowMs) {
+  const now = Date.now();
+  const recent = (map.get(key) || []).filter((t) => now - t < windowMs);
+  if (recent.length >= limit) {
+    map.set(key, recent);
+    return false;
+  }
+  recent.push(now);
+  map.set(key, recent);
+  return true;
+}
+
+// Accepted OTP access tokens are remembered by hash for 15 minutes; a repeat is refused.
+const usedAccessTokens = new Map(); // sha256(token) -> expiry (ms)
+function accessTokenKey(token) {
+  return crypto.createHash("sha256").update(token).digest("hex");
+}
+function isUsedAccessToken(token) {
+  const now = Date.now();
+  for (const [key, expiry] of usedAccessTokens) {
+    if (expiry <= now) usedAccessTokens.delete(key);
+  }
+  return usedAccessTokens.has(accessTokenKey(token));
+}
+function markAccessTokenUsed(token) {
+  usedAccessTokens.set(accessTokenKey(token), Date.now() + 15 * 60 * 1000);
+}
+
+// Demo players (demo_ ids or the "demo" marker) may never claim offers, in any environment
+async function isDemoPlayerRequest(req) {
+  const session = await getPlayerSession(req);
+  return Boolean(session && (session.mobile_number === DEMO_SESSION_MARKER || isDemoPlayerId(session.player_id)));
 }
 
 function allowDemoEntry(req) {
@@ -160,7 +201,7 @@ function getPlayerEntryMode() {
 }
 
 // Player OTP sign-in verifies MSG91 access tokens server-side and cannot work without the Authkey.
-if (isProductionServer && !process.env.MSG91_AUTHKEY) {
+if (isProductionServer && !(process.env.MSG91_AUTH_KEY || process.env.MSG91_AUTHKEY)) {
   console.error("MSG91_AUTHKEY is not set: player OTP sign-in (POST /api/auth/msg91) will return HTTP 503 until it is configured and the site is redeployed.");
 }
 
@@ -1350,7 +1391,10 @@ async function handleRequest(req, res) {
     if (!isSameOriginRequest(req)) {
       return sendJson(res, 403, { success: false, message: "Request origin rejected." });
     }
-    const authkey = process.env.MSG91_AUTHKEY;
+    if (!allowAttempt(otpAttemptMap, clientKey(req), OTP_ATTEMPT_LIMIT, OTP_ATTEMPT_WINDOW_MS)) {
+      return sendJson(res, 429, { success: false, message: "Too many attempts. Please wait a few minutes and try again." });
+    }
+    const authkey = process.env.MSG91_AUTH_KEY || process.env.MSG91_AUTHKEY;
     if (!authkey) {
       // Name only, never a value: makes a missing deployment variable visible in function logs.
       console.error("MSG91 sign-in unavailable: the MSG91_AUTHKEY environment variable is not set on this deployment.");
@@ -1366,6 +1410,10 @@ async function handleRequest(req, res) {
     const requestedMobile = normalizeIndianMobile(body.mobileNumber);
     if (!accessToken || accessToken.length > 4096 || !requestedMobile) {
       return sendJson(res, 400, { success: false, message: "Invalid authentication request." });
+    }
+
+    if (isUsedAccessToken(accessToken)) {
+      return sendJson(res, 401, { success: false, message: "This code has already been used. Please request a new OTP." });
     }
 
     let upstream;
@@ -1393,7 +1441,7 @@ async function handleRequest(req, res) {
       return sendJson(res, 502, { success: false, message: "Phone verification could not be completed." });
     }
     if (!upstream.ok || !verification || verification.type !== "success") {
-      return sendJson(res, 401, { success: false, message: "Phone verification failed. Please verify your OTP again." });
+      return sendJson(res, 401, { success: false, message: "That OTP is invalid or has expired. Please check the code or request a new one." });
     }
 
     const verifiedMobile = normalizeIndianMobile(extractMsg91VerifiedMobile(verification));
@@ -1408,6 +1456,7 @@ async function handleRequest(req, res) {
     if (verifiedMobile !== requestedMobile) {
       return sendJson(res, 401, { success: false, message: "Verified phone number did not match the OTP request." });
     }
+    markAccessTokenUsed(accessToken);
 
     try {
       const rawSessionToken = crypto.randomBytes(32).toString("base64url");
@@ -1917,6 +1966,7 @@ async function handleRequest(req, res) {
   // 3. PUBLIC API: POST /api/offers/claim (Claim Offer for Score 100+)
   // -------------------------------------------------------------------------
   if (pathname === "/api/offers/claim" && method === "POST") {
+    if (await isDemoPlayerRequest(req)) return sendJson(res, 403, { success: false, message: "Offers are available to verified customers only." });
     if (!isSameOriginRequest(req)) return sendJson(res, 403, { success: false, message: "Request origin rejected." });
     const authenticatedPlayer = await getPlayerSession(req);
     if (!authenticatedPlayer) return sendJson(res, 401, { success: false, message: "Please sign in to continue." });
@@ -2089,6 +2139,7 @@ async function handleRequest(req, res) {
   // 4. PUBLIC API: GET /api/offers/claim (Retrieve Existing Claim for Session)
   // -------------------------------------------------------------------------
   if (pathname === "/api/offers/claim" && method === "GET") {
+    if (await isDemoPlayerRequest(req)) return sendJson(res, 403, { success: false, message: "Offers are available to verified customers only." });
     const authenticatedPlayer = await getPlayerSession(req);
     if (!authenticatedPlayer) return sendJson(res, 401, { success: false, message: "Please sign in to continue." });
     try {
